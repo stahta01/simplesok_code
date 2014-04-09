@@ -1,0 +1,10 @@
+for 1.0:
+ - when moving the level, make the scrolling gentle (same rate as player's movement)
+ - embedd "classic" levels (as designed by Thinking Rabbit in late 1981)
+ - create a menu to choose levels family (microban(easy) classic sasquatch(hard))
+ - create menu to choose levels, with only 3 unsolved levels being unlocked
+
+undefined future:
+ - allow to play the solution (if any)
+ - add an internet levels mode
+ - skins support
