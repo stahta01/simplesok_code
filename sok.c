@@ -556,8 +556,9 @@ int main(int argc, char **argv) {
 
   for (curlevel = 0; curlevel + 1 < levelscount; curlevel++) {
     if (gameslist[curlevel]->solution != NULL) {
-        printf("Level %d has solution: %s\n", curlevel + 1, gameslist[curlevel]->solution);
+        printf("Level %d [%08lX] has solution: %s\n", curlevel + 1, gameslist[curlevel]->crc32, gameslist[curlevel]->solution);
       } else {
+        printf("Level %d [%08lX] has NO solution\n", curlevel + 1, gameslist[curlevel]->crc32);
         break;
     }
   }

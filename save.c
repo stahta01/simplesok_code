@@ -19,6 +19,7 @@
  * ----------------------------------------------------------------------
  */
 
+#include <errno.h>
 #include <stdio.h>    /* fopen() */
 #include <stdlib.h>   /* getenv(), malloc(), realloc() */
 #include <string.h>   /* strcpy(), strcat() */
@@ -142,8 +143,9 @@ static void getsavedir(char *savedir, int maxlen) {
 
 /* returns a malloc()'ed, null-terminated string with the solution to level levcrc32. if no solution available, returns NULL. */
 char *solution_load(unsigned long levcrc32) {
-  char rootdir[4096], crcstr[16], *solution, solution_alloc = 4, *solutionfinal;
-  int bytebuff, rlecounter, solutionpos = 0;
+  char rootdir[4096], crcstr[16], *solution, *solutionfinal;
+  int bytebuff, rlecounter;
+  long solutionpos = 0, solution_alloc = 16;
   FILE *fd;
   getsavedir(rootdir, sizeof(rootdir));
   if (rootdir[0] == 0) return(NULL);
@@ -166,7 +168,10 @@ char *solution_load(unsigned long levcrc32) {
       if (solutionpos + 1 >= solution_alloc) {
         solution_alloc *= 2;
         solution = realloc(solution, solution_alloc);
-        if (solution == NULL) return(NULL);
+        if (solution == NULL) {
+          printf("realloc() failed for %ld bytes: %s\n", solution_alloc, strerror(errno));
+          return(NULL);
+        }
       }
       /* add one position to the solution and decrement the rle counter */
       solution[solutionpos] = byte2xsb(bytebuff);
@@ -176,7 +181,7 @@ char *solution_load(unsigned long levcrc32) {
       }
       solutionpos += 1;
       solution[solutionpos] = 0;
-      rlecounter--;
+      rlecounter -= 1;
     }
   }
 
@@ -209,7 +214,7 @@ void solution_save(unsigned long levcrc32, char *solution) {
           bytebuff = lastbytecount;
           bytebuff <<= 4;
           bytebuff |= lastbyte;
-          fprintf(fd, "%c", bytebuff);
+          fputc(bytebuff, fd);
         }
         /* save the new RLE counter */
         lastbyte = curbyte;

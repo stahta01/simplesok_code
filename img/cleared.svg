@@ -7,10 +7,11 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="320"
-   height="200"
+   width="395.38696"
+   height="258.80161"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
@@ -19,7 +20,54 @@
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
-     id="defs4" />
+     id="defs4">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient3758">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop3760" />
+      <stop
+         style="stop-color:#ffffff;stop-opacity:0;"
+         offset="1"
+         id="stop3762" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3758"
+       id="radialGradient3776"
+       cx="-128.86179"
+       cy="82.520325"
+       fx="-128.86179"
+       fy="82.520325"
+       r="156.50406"
+       gradientTransform="matrix(1.1625927,-0.17068634,0.07012875,0.47766666,15.164937,21.108173)"
+       gradientUnits="userSpaceOnUse" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3758"
+       id="radialGradient3872"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.1625927,-0.17068634,0.07012875,0.47766666,15.164937,21.108173)"
+       cx="-128.86179"
+       cy="82.520325"
+       fx="-128.86179"
+       fy="82.520325"
+       r="156.50406" />
+    <filter
+       inkscape:collect="always"
+       id="filter3767"
+       x="-0.097246051"
+       width="1.1944921"
+       y="-0.15665454"
+       height="1.3133091">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="14.593495"
+         id="feGaussianBlur3769" />
+    </filter>
+  </defs>
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -28,8 +76,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.23"
-     inkscape:cx="71.523507"
-     inkscape:cy="101.56041"
+     inkscape:cx="47.666187"
+     inkscape:cy="132.99373"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -38,7 +86,11 @@
      inkscape:window-x="-3"
      inkscape:window-y="-3"
      inkscape:window-maximized="1"
-     width="800px" />
+     width="800px"
+     fit-margin-top="0.1"
+     fit-margin-left="0.1"
+     fit-margin-right="0.1"
+     fit-margin-bottom="0.1" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -55,15 +107,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-852.36218)">
-    <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       id="rect3017"
-       width="315.44714"
-       height="103.25202"
-       x="2.2764282"
-       y="900.73615"
-       ry="16.93796" />
+     transform="translate(37.124363,-824.9939)">
     <text
        xml:space="preserve"
        style="font-size:13px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -76,29 +120,39 @@
          id="tspan3022"
          x="209.25926"
          y="445.37036" /></text>
+    <path
+       sodipodi:type="arc"
+       style="fill:url(#radialGradient3872);fill-opacity:1;stroke:none;filter:url(#filter3767)"
+       id="path3768"
+       sodipodi:cx="-128.86179"
+       sodipodi:cy="82.520325"
+       sodipodi:rx="180.08128"
+       sodipodi:ry="111.78861"
+       d="m 51.219498,82.520325 c 0,61.739145 -80.625137,111.788615 -180.081288,111.788615 -99.45614,0 -180.08128,-50.04947 -180.08128,-111.788615 0,-61.739146 80.62514,-111.788613 180.08128,-111.788613 99.456151,0 180.081288,50.049467 180.081288,111.788613 z"
+       transform="translate(289.4309,871.87438)" />
     <g
-       id="g3757"
-       transform="translate(41.06145,-6.1970546)">
+       id="g3858"
+       transform="translate(-5.7373046e-7,2.0869141e-5)">
       <text
          sodipodi:linespacing="125%"
          id="text3013-3"
-         y="970.4707"
-         x="12.581669"
-         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#c4c4c4;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
+         y="966.30615"
+         x="54.212234"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.67961162;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
          xml:space="preserve"><tspan
-           y="970.4707"
-           x="12.581669"
+           y="966.30615"
+           x="54.212234"
            id="tspan3015-8"
            sodipodi:role="line">Good job!</tspan></text>
       <text
          sodipodi:linespacing="125%"
          id="text3013"
-         y="968.40558"
-         x="10.354026"
-         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#00003a;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
+         y="964.24103"
+         x="51.984589"
+         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#3a2d00;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
          xml:space="preserve"><tspan
-           y="968.40558"
-           x="10.354026"
+           y="964.24103"
+           x="51.984589"
            id="tspan3015"
            sodipodi:role="line">Good job!</tspan></text>
     </g>
