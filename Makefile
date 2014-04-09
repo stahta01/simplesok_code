@@ -2,7 +2,7 @@
 CFLAGS = -O3 -Wall -Wextra -std=gnu89 -pedantic
 CLIBS = `sdl2-config --libs` -lSDL2_image
 
-all: sok
+all: simplesok
 
 simplesok: sok.o sok_core.o crc32.o save.o
 	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o -o simplesok $(CLIBS)

@@ -49,7 +49,7 @@ struct spritesstruct {
   SDL_Texture *intro;
   SDL_Texture *player;
   SDL_Texture *walls[16];
-  SDL_Texture *font[64];
+  SDL_Texture *font[128];
 };
 
 /* returns the absolute value of the 'i' integer. */
@@ -61,7 +61,22 @@ static int absval(int i) {
 static int char2fontid(char c) {
   if ((c >= '0') && (c <= '9')) return(c - '0');
   if ((c >= 'a') && (c <= 'z')) return(10 + c - 'a');
-  if ((c >= 'A') && (c <= 'Z')) return(10 + c - 'A');
+  if ((c >= 'A') && (c <= 'Z')) return(36 + c - 'A');
+  /* handle symbols */
+  switch (c) {
+    case ':': return(63);
+    case '!': return(64);
+    case '$': return(65);
+    case '.': return(66);
+    case '&': return(67);
+    case '*': return(68);
+    case ',': return(69);
+    case '(': return(70);
+    case ')': return(71);
+    case '[': return(72);
+    case ']': return(73);
+  }
+  /* anything else... */
   return(0);
 }
 
@@ -152,7 +167,7 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
   rectdst.y = y;
   for (i = 0; string[i] != 0; i++) {
     if (string[i] == ' ') {
-      rectdst.x += 20;
+      rectdst.x += 12;
       continue;
     }
     glyph = sprites->font[char2fontid(string[i])];
@@ -160,7 +175,7 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
     rectdst.w = rectsrc.w;
     rectdst.h = rectsrc.h;
     SDL_RenderCopy(renderer, glyph, NULL, &rectdst);
-    rectdst.x += rectsrc.w;
+    rectdst.x += (rectsrc.w - 3);
   }
 }
 
@@ -292,11 +307,11 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
       draw_player(game, states, sprites, renderer, winw, winh, tilesize, moveoffsetx, moveoffsety);
   }
   /* draw text */
-  sprintf(stringbuff, "level %d", game->level);
+  sprintf(stringbuff, "level: %d", game->level);
   draw_string(stringbuff, sprites, renderer, 10, 0);
-  sprintf(stringbuff, "best score 0");
+  sprintf(stringbuff, "best score: 0");
   draw_string(stringbuff, sprites, renderer, 10, 25);
-  sprintf(stringbuff, "moves %d", states->movescount);
+  sprintf(stringbuff, "moves: %d", states->movescount);
   draw_string(stringbuff, sprites, renderer, 10, 50);
   /* Update the screen */
   SDL_RenderPresent(renderer);
@@ -477,6 +492,43 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid('x')], renderer, font_x_png, font_x_png_len);
   loadGraphic(&sprites->font[char2fontid('y')], renderer, font_y_png, font_y_png_len);
   loadGraphic(&sprites->font[char2fontid('z')], renderer, font_z_png, font_z_png_len);
+  loadGraphic(&sprites->font[char2fontid('A')], renderer, font_aa_png, font_aa_png_len);
+  loadGraphic(&sprites->font[char2fontid('B')], renderer, font_bb_png, font_bb_png_len);
+  loadGraphic(&sprites->font[char2fontid('C')], renderer, font_cc_png, font_cc_png_len);
+  loadGraphic(&sprites->font[char2fontid('D')], renderer, font_dd_png, font_dd_png_len);
+  loadGraphic(&sprites->font[char2fontid('E')], renderer, font_ee_png, font_ee_png_len);
+  loadGraphic(&sprites->font[char2fontid('F')], renderer, font_ff_png, font_ff_png_len);
+  loadGraphic(&sprites->font[char2fontid('G')], renderer, font_gg_png, font_gg_png_len);
+  loadGraphic(&sprites->font[char2fontid('H')], renderer, font_hh_png, font_hh_png_len);
+  loadGraphic(&sprites->font[char2fontid('I')], renderer, font_ii_png, font_ii_png_len);
+  loadGraphic(&sprites->font[char2fontid('J')], renderer, font_jj_png, font_jj_png_len);
+  loadGraphic(&sprites->font[char2fontid('K')], renderer, font_kk_png, font_kk_png_len);
+  loadGraphic(&sprites->font[char2fontid('L')], renderer, font_ll_png, font_ll_png_len);
+  loadGraphic(&sprites->font[char2fontid('M')], renderer, font_mm_png, font_mm_png_len);
+  loadGraphic(&sprites->font[char2fontid('N')], renderer, font_nn_png, font_nn_png_len);
+  loadGraphic(&sprites->font[char2fontid('O')], renderer, font_oo_png, font_oo_png_len);
+  loadGraphic(&sprites->font[char2fontid('P')], renderer, font_pp_png, font_pp_png_len);
+  loadGraphic(&sprites->font[char2fontid('Q')], renderer, font_qq_png, font_qq_png_len);
+  loadGraphic(&sprites->font[char2fontid('R')], renderer, font_rr_png, font_rr_png_len);
+  loadGraphic(&sprites->font[char2fontid('S')], renderer, font_ss_png, font_ss_png_len);
+  loadGraphic(&sprites->font[char2fontid('T')], renderer, font_tt_png, font_tt_png_len);
+  loadGraphic(&sprites->font[char2fontid('U')], renderer, font_uu_png, font_uu_png_len);
+  loadGraphic(&sprites->font[char2fontid('V')], renderer, font_vv_png, font_vv_png_len);
+  loadGraphic(&sprites->font[char2fontid('W')], renderer, font_ww_png, font_ww_png_len);
+  loadGraphic(&sprites->font[char2fontid('X')], renderer, font_xx_png, font_xx_png_len);
+  loadGraphic(&sprites->font[char2fontid('Y')], renderer, font_yy_png, font_yy_png_len);
+  loadGraphic(&sprites->font[char2fontid('Z')], renderer, font_zz_png, font_zz_png_len);
+  loadGraphic(&sprites->font[char2fontid(':')], renderer, font_sym_col_png, font_sym_col_png_len);
+  loadGraphic(&sprites->font[char2fontid('!')], renderer, font_sym_excl_png, font_sym_excl_png_len);
+  loadGraphic(&sprites->font[char2fontid('$')], renderer, font_sym_doll_png, font_sym_doll_png_len);
+  loadGraphic(&sprites->font[char2fontid('.')], renderer, font_sym_dot_png, font_sym_dot_png_len);
+  loadGraphic(&sprites->font[char2fontid('&')], renderer, font_sym_ampe_png, font_sym_ampe_png_len);
+  loadGraphic(&sprites->font[char2fontid('*')], renderer, font_sym_star_png, font_sym_star_png_len);
+  loadGraphic(&sprites->font[char2fontid(',')], renderer, font_sym_comm_png, font_sym_comm_png_len);
+  loadGraphic(&sprites->font[char2fontid('(')], renderer, font_sym_par1_png, font_sym_par1_png_len);
+  loadGraphic(&sprites->font[char2fontid(')')], renderer, font_sym_par2_png, font_sym_par2_png_len);
+  loadGraphic(&sprites->font[char2fontid('[')], renderer, font_sym_bra1_png, font_sym_bra1_png_len);
+  loadGraphic(&sprites->font[char2fontid(']')], renderer, font_sym_bra2_png, font_sym_bra2_png_len);
 
   /* Hide the mouse cursor */
   SDL_ShowCursor(SDL_DISABLE);
