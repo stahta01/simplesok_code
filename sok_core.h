@@ -40,8 +40,9 @@
 
   struct sokgamestates {
     int angle;
-    int movescount;
-    char history[4096];
+    long movescount;
+    char *history;
+    long historyallocsize;
   };
 
   enum SOKMOVE {
@@ -71,5 +72,11 @@
 
   /* reset game's states */
   void sok_resetstates(struct sokgamestates *states);
+
+  /* initialize a states structure, and return a pointer to it */
+  struct sokgamestates *sok_newstates(void);
+
+  /* free the memory occupied by a previously allocated states structure */
+  void sok_freestates(struct sokgamestates *states);
 
 #endif

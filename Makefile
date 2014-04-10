@@ -7,7 +7,7 @@ all: simplesok
 simplesok: sok.o sok_core.o crc32.o save.o
 	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o -o simplesok $(CLIBS)
 
-sok.o: sok.c data_img.h data_lev.h data_fnt.h
+sok.o: sok.c data_img.h data_lev.h data_fnt.h data_skn.h
 	gcc -c $(CFLAGS) sok.c -o sok.o
 
 sok_core.o: sok_core.c
@@ -26,6 +26,11 @@ data_img.h: img/*.png file2c
 	optipng -o7 img/*.png
 	echo "/* This file is part of the sok project. */" > data_img.h
 	for x in img/*.png ; do ./file2c $$x >> data_img.h ; done
+
+data_skn.h: skin/*.png file2c
+	optipng -o7 skin/*.png
+	echo "/* This file is part of the sok project. */" > data_skn.h
+	for x in skin/*.png ; do ./file2c $$x >> data_skn.h ; done
 
 data_lev.h: levels/*.xsb file2c
 	echo "/* This file is part of the sok project. */" > data_lev.h

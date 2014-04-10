@@ -25,7 +25,8 @@
 #include "sok_core.h"
 #include "data_lev.h"                 /* embedded image files */
 #include "data_img.h"                 /* embedded level files */
-#include "data_fnt.h"                 /* embedded level files */
+#include "data_fnt.h"                 /* embedded font files */
+#include "data_skn.h"                 /* embedded skin files */
 
 #define PVER "v1.0 alpha"
 
@@ -34,8 +35,8 @@
 #define SCREEN_DEFAULT_HEIGHT 600
 
 #define DISPLAYCENTERED 1
-#define DISPLAYFADEIN 2
-#define DISPLAYFADEOUT 4
+#define NOREFRESH 2
+
 
 
 struct spritesstruct {
@@ -75,9 +76,11 @@ static int char2fontid(char c) {
     case ')': return(71);
     case '[': return(72);
     case ']': return(73);
+    case '-': return(74);
+    case '_': return(75);
   }
   /* anything else... */
-  return(0);
+  return(75);
 }
 
 static int getoffseth(struct sokgame *game, int winw, int tilesize) {
@@ -132,31 +135,24 @@ static int wait_for_a_key(int timeout, SDL_Renderer *renderer) {
 }
 
 /* display a bitmap onscreen */
-static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Window *window, int timeout, int flags) {
-  int x, winw, winh;
+static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Window *window, int timeout, int flags, int alpha) {
+  int winw, winh;
   SDL_Rect rect, *rectptr;
   SDL_QueryTexture(texture, NULL, NULL, &rect.w, &rect.h);
   SDL_GetWindowSize(window, &winw, &winh);
   if (flags & DISPLAYCENTERED) {
       rectptr = &rect;
+      rect.x = (winw - rect.w) / 2;
+      rect.y = (winh - rect.h) / 2;
     } else {
       rectptr = NULL;
   }
-  rect.x = (winw - rect.w) / 2;
-  rect.y = (winh - rect.h) / 2;
   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-
-  if (flags & DISPLAYFADEIN) {
-    for (x = 0; x < 150 ; x += 3) {
-      SDL_SetTextureAlphaMod(texture, x);
-      SDL_RenderCopy(renderer, texture, NULL, rectptr);
-      SDL_RenderPresent(renderer);
-      SDL_Delay(20);
-    }
-  }
+  SDL_SetTextureAlphaMod(texture, alpha);
   SDL_RenderCopy(renderer, texture, NULL, rectptr);
-  SDL_RenderPresent(renderer);
-  return(wait_for_a_key(timeout, renderer));
+  if ((flags & NOREFRESH) == 0) SDL_RenderPresent(renderer);
+  if (timeout > 0) return(wait_for_a_key(timeout, renderer));
+  return(0);
 }
 
 static void draw_string(char *string, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y) {
@@ -205,10 +201,10 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
       int atomongoal = 0;
       if ((game->field[x][y] & field_goal) && (game->field[x][y] & field_atom)) {
         atomongoal = 1;
-        if ((moveoffsetx > 0) && ((game->field[x + 1][y] & field_goal) == 0)) atomongoal = 0;
-        if ((moveoffsetx < 0) && ((game->field[x - 1][y] & field_goal) == 0)) atomongoal = 0;
-        if ((moveoffsety > 0) && ((game->field[x][y + 1] & field_goal) == 0)) atomongoal = 0;
-        if ((moveoffsety < 0) && ((game->field[x][y - 1] & field_goal) == 0)) atomongoal = 0;
+        if ((game->positionx == x - 1) && (game->positiony == y) && (moveoffsetx > 0) && ((game->field[x + 1][y] & field_goal) == 0)) atomongoal = 0;
+        if ((game->positionx == x + 1) && (game->positiony == y) && (moveoffsetx < 0) && ((game->field[x - 1][y] & field_goal) == 0)) atomongoal = 0;
+        if ((game->positionx == x) && (game->positiony == y - 1) && (moveoffsety > 0) && ((game->field[x][y + 1] & field_goal) == 0)) atomongoal = 0;
+        if ((game->positionx == x) && (game->positiony == y + 1) && (moveoffsety < 0) && ((game->field[x][y - 1] & field_goal) == 0)) atomongoal = 0;
       }
       if (atomongoal != 0) {
           SDL_RenderCopy(renderer, sprites->atom_on_goal, NULL, &rect);
@@ -243,7 +239,7 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   return(res);
 }
 
-static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, int moveoffsetx, int moveoffsety, int scrolling) {
+static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, int moveoffsetx, int moveoffsety, int scrolling, int skiprefresh, char *levelname) {
   int x, y, winw, winh, offx, offy;
   /* int partialoffsetx = 0, partialoffsety = 0; */
   char stringbuff[256];
@@ -307,17 +303,21 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
       draw_player(game, states, sprites, renderer, winw, winh, tilesize, moveoffsetx, moveoffsety);
   }
   /* draw text */
-  sprintf(stringbuff, "level: %d", game->level);
+  sprintf(stringbuff, "%s, level %d", levelname, game->level);
   draw_string(stringbuff, sprites, renderer, 10, 0);
-  sprintf(stringbuff, "best score: 0");
+  if (game->solution != NULL) {
+      sprintf(stringbuff, "best score: %ld", (long)strlen(game->solution));
+    } else {
+      sprintf(stringbuff, "best score: -");
+  }
   draw_string(stringbuff, sprites, renderer, 10, 25);
-  sprintf(stringbuff, "moves: %d", states->movescount);
+  sprintf(stringbuff, "moves: %ld", states->movescount);
   draw_string(stringbuff, sprites, renderer, 10, 50);
   /* Update the screen */
-  SDL_RenderPresent(renderer);
+  if (skiprefresh == 0) SDL_RenderPresent(renderer);
 }
 
-static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int tilesize) {
+static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levelname) {
   int srcangle = states->angle;
   int dstangle = 0, dirmotion, winw, winh;
   SDL_GetWindowSize(window, &winw, &winh);
@@ -365,7 +365,7 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
       if (tmpangle % 10 == 0) {
-        draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0);
+        draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levelname);
         SDL_Delay(10);
       }
       if (tmpangle == dstangle) break;
@@ -390,13 +390,71 @@ static int scrollneeded(struct sokgame *game, SDL_Window *window, int tilesize, 
   return(result);
 }
 
+static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct sokgamestates *states) {
+  memcpy(togame, fromgame, sizeof(struct sokgame));
+  sok_resetstates(states);
+}
+
+static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize) {
+  int exitflag, winw, winh;
+  static int selection = 0;
+  unsigned char *memptr[3] = {levels_microban_xsb, levels_original_xsb, levels_sasquatch_xsb};
+  int textvadj = 12;
+  SDL_Event event;
+  SDL_Rect rect;
+
+  /* display the intro screen, and wait for a keypress during a few seconds */
+  for (;;) {
+    SDL_GetWindowSize(window, &winw, &winh);
+    displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
+    /* compute the dst rect */
+    rect.x = winw * 0.23;
+    rect.y = winh * 0.63 + winh * 0.08 * selection;
+    rect.w = tilesize;
+    rect.h = tilesize;
+    SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
+    draw_string("Easy (aka Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0);
+    draw_string("Original & Extra", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1);
+    draw_string("Hard (aka Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2);
+    SDL_RenderPresent(renderer);
+
+    /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
+    for (;;) if ((SDL_WaitEvent(&event) != 0) && (event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
+
+    /* check what event we got */
+    if (event.type == SDL_QUIT) {
+        return(NULL);
+      } else if (event.type == SDL_KEYDOWN) {
+        switch (event.key.keysym.sym) {
+          case SDLK_UP:
+          case SDLK_KP_8:
+            selection--;
+            break;
+          case SDLK_DOWN:
+          case SDLK_KP_2:
+            selection++;
+            break;
+          case SDLK_RETURN:
+          case SDLK_KP_ENTER:
+            return(memptr[selection]);
+            break;
+          case SDLK_ESCAPE:
+            return(NULL);
+            break;
+        }
+        if (selection < 0) selection = 2;
+        if (selection > 2) selection = 0;
+    }
+  }
+  if (exitflag != 0) return(NULL);
+}
 
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
-  struct sokgamestates states;
+  struct sokgamestates *states;
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
-  int levelscount, curlevel = 0, exitflag = 0, showhelp = 1, x;
+  int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x;
   int tilesize;
   char *levelfile = NULL;
   #define LEVCOMMENTMAXLEN 32
@@ -428,34 +486,34 @@ int main(int argc, char **argv) {
   }
 
   /* Load sprites */
-  loadGraphic(&sprites->atom, renderer, img_atom_png, img_atom_png_len);
-  loadGraphic(&sprites->atom_on_goal, renderer, img_atom_on_goal_png, img_atom_on_goal_png_len);
-  tilesize = loadGraphic(&sprites->floor, renderer, img_floor_png, img_floor_png_len);
-  loadGraphic(&sprites->goal, renderer, img_goal_png, img_goal_png_len);
-  loadGraphic(&sprites->player, renderer, img_player_png, img_player_png_len);
+  loadGraphic(&sprites->atom, renderer, skin_atom_png, skin_atom_png_len);
+  loadGraphic(&sprites->atom_on_goal, renderer, skin_atom_on_goal_png, skin_atom_on_goal_png_len);
+  tilesize = loadGraphic(&sprites->floor, renderer, skin_floor_png, skin_floor_png_len);
+  loadGraphic(&sprites->goal, renderer, skin_goal_png, skin_goal_png_len);
+  loadGraphic(&sprites->player, renderer, skin_player_png, skin_player_png_len);
   loadGraphic(&sprites->intro, renderer, img_intro_png, img_intro_png_len);
-  loadGraphic(&sprites->bg, renderer, img_bg_png, img_bg_png_len);
+  loadGraphic(&sprites->bg, renderer, skin_bg_png, skin_bg_png_len);
   loadGraphic(&sprites->cleared, renderer, img_cleared_png, img_cleared_png_len);
   loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
-  loadGraphic(&sprites->walls[0],  renderer, img_wall0_png,  img_wall0_png_len);
-  loadGraphic(&sprites->walls[1],  renderer, img_wall1_png,  img_wall1_png_len);
-  loadGraphic(&sprites->walls[2],  renderer, img_wall2_png,  img_wall2_png_len);
-  loadGraphic(&sprites->walls[3],  renderer, img_wall3_png,  img_wall3_png_len);
-  loadGraphic(&sprites->walls[4],  renderer, img_wall4_png,  img_wall4_png_len);
-  loadGraphic(&sprites->walls[5],  renderer, img_wall5_png,  img_wall5_png_len);
-  loadGraphic(&sprites->walls[6],  renderer, img_wall6_png,  img_wall6_png_len);
-  loadGraphic(&sprites->walls[7],  renderer, img_wall7_png,  img_wall7_png_len);
-  loadGraphic(&sprites->walls[8],  renderer, img_wall8_png,  img_wall8_png_len);
-  loadGraphic(&sprites->walls[9],  renderer, img_wall9_png,  img_wall9_png_len);
-  loadGraphic(&sprites->walls[10], renderer, img_wall10_png, img_wall10_png_len);
-  loadGraphic(&sprites->walls[11], renderer, img_wall11_png, img_wall11_png_len);
-  loadGraphic(&sprites->walls[12], renderer, img_wall12_png, img_wall12_png_len);
-  loadGraphic(&sprites->walls[13], renderer, img_wall13_png, img_wall13_png_len);
-  loadGraphic(&sprites->walls[14], renderer, img_wall14_png, img_wall14_png_len);
-  loadGraphic(&sprites->walls[15], renderer, img_wall15_png, img_wall15_png_len);
+  loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
+  loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
+  loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
+  loadGraphic(&sprites->walls[3],  renderer, skin_wall3_png,  skin_wall3_png_len);
+  loadGraphic(&sprites->walls[4],  renderer, skin_wall4_png,  skin_wall4_png_len);
+  loadGraphic(&sprites->walls[5],  renderer, skin_wall5_png,  skin_wall5_png_len);
+  loadGraphic(&sprites->walls[6],  renderer, skin_wall6_png,  skin_wall6_png_len);
+  loadGraphic(&sprites->walls[7],  renderer, skin_wall7_png,  skin_wall7_png_len);
+  loadGraphic(&sprites->walls[8],  renderer, skin_wall8_png,  skin_wall8_png_len);
+  loadGraphic(&sprites->walls[9],  renderer, skin_wall9_png,  skin_wall9_png_len);
+  loadGraphic(&sprites->walls[10], renderer, skin_wall10_png, skin_wall10_png_len);
+  loadGraphic(&sprites->walls[11], renderer, skin_wall11_png, skin_wall11_png_len);
+  loadGraphic(&sprites->walls[12], renderer, skin_wall12_png, skin_wall12_png_len);
+  loadGraphic(&sprites->walls[13], renderer, skin_wall13_png, skin_wall13_png_len);
+  loadGraphic(&sprites->walls[14], renderer, skin_wall14_png, skin_wall14_png_len);
+  loadGraphic(&sprites->walls[15], renderer, skin_wall15_png, skin_wall15_png_len);
 
   /* load font */
-  for (x = 0; x < 64; x++) sprites->font[x] = NULL;
+  for (x = 0; x < 128; x++) sprites->font[x] = NULL;
   loadGraphic(&sprites->font[char2fontid('0')], renderer, font_0_png, font_0_png_len);
   loadGraphic(&sprites->font[char2fontid('1')], renderer, font_1_png, font_1_png_len);
   loadGraphic(&sprites->font[char2fontid('2')], renderer, font_2_png, font_2_png_len);
@@ -529,9 +587,12 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid(')')], renderer, font_sym_par2_png, font_sym_par2_png_len);
   loadGraphic(&sprites->font[char2fontid('[')], renderer, font_sym_bra1_png, font_sym_bra1_png_len);
   loadGraphic(&sprites->font[char2fontid(']')], renderer, font_sym_bra2_png, font_sym_bra2_png_len);
+  loadGraphic(&sprites->font[char2fontid('-')], renderer, font_sym_minu_png, font_sym_minu_png_len);
+  loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_png, font_sym_unde_png_len);
 
-  /* Hide the mouse cursor */
+  /* Hide the mouse cursor and disable mouse events */
   SDL_ShowCursor(SDL_DISABLE);
+  SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
 
   if (argc == 2) levelfile = argv[1];
 
@@ -541,16 +602,27 @@ int main(int argc, char **argv) {
     return(1);
   }
 
-  levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, levels_microban_xsb, levcomment, LEVCOMMENTMAXLEN);
+  states = sok_newstates();
+  if (states == NULL) return(1);
+
+  GametypeSelectMenu:
+  if (levelfile != NULL) {
+      levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, levcomment, LEVCOMMENTMAXLEN);
+    } else {
+      unsigned char *xsblevelptr;
+      xsblevelptr = selectgametype(renderer, sprites, window, tilesize);
+      if (xsblevelptr == NULL) {
+        exitflag = 1;
+        xsblevelptr = levels_microban_xsb;
+      }
+      levelscount = sok_loadfile(gameslist, MAXLEVELS, NULL, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
+  }
   if (levelscount < 1) {
     printf("Failed to load the level file! [%d]\n", levelscount);
     return(1);
   }
 
   printf("Loaded %d levels '%s'\n", levelscount, levcomment);
-
-  /* display the intro screen, and wait for a keypress during a few seconds */
-  exitflag = displaytexture(renderer, sprites->intro, window, 6, 0);
 
   flush_events();
 
@@ -562,19 +634,18 @@ int main(int argc, char **argv) {
         break;
     }
   }
-  memcpy(&game, gameslist[curlevel], sizeof(game));
-  sok_resetstates(&states);
+  loadlevel(&game, gameslist[curlevel], states);
 
-  if (curlevel > 0) showhelp = 0;
+  if (curlevel == 0) showhelp = 1;
 
-  for (;;) {
-    draw_screen(&game, &states, sprites, renderer, window, tilesize, 0, 0, 0);
+  while (exitflag == 0) {
+    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
     if (showhelp != 0) {
-      exitflag = displaytexture(renderer, sprites->help, window, 0, DISPLAYCENTERED);
-      draw_screen(&game, &states, sprites, renderer, window, tilesize, 0, 0, 0);
+      exitflag = displaytexture(renderer, sprites->help, window, 0, DISPLAYCENTERED, 255);
+      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
       showhelp = 0;
     }
-    printf("history: %s\n", states.history);
+    printf("history: %s\n", states->history);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) {
@@ -604,15 +675,22 @@ int main(int argc, char **argv) {
             movedir = sokmoveDOWN;
             break;
           case SDLK_BACKSPACE:
-            sok_undo(&game, &states);
+            sok_undo(&game, states);
+            break;
+          case SDLK_r:
+            loadlevel(&game, gameslist[curlevel], states);
             break;
           case SDLK_ESCAPE:
-            exitflag = 1;
+            if (levelfile != NULL) {
+                exitflag = 1;
+              } else {
+                goto GametypeSelectMenu;
+            }
             break;
         }
         if (movedir != 0) {
-          rotatePlayer(sprites, &game, &states, movedir, renderer, window, tilesize);
-          res = sok_move(&game, movedir, 1, &states);
+          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment);
+          res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
             /* How will I need to move? */
@@ -625,32 +703,44 @@ int main(int argc, char **argv) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, &states, sprites, renderer, window, tilesize, offset, 0, scrolling);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, 0, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, &states, sprites, renderer, window, tilesize, 0, offset, scrolling);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, 0, levcomment);
               }
             }
           }
-          res = sok_move(&game, movedir, 0, &states);
+          res = sok_move(&game, movedir, 0, states);
           if ((res >= 0) && (res & sokmove_solved)) {
+            int alphaval;
             /* display a congrats message and increment level */
-            draw_screen(&game, &states, sprites, renderer, window, tilesize, 0, 0, 0);
-            exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED | DISPLAYFADEIN);
+            for (alphaval = 0; alphaval < 255; alphaval += 30) {
+              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 1, levcomment);
+              exitflag = displaytexture(renderer, sprites->cleared, window, 0, DISPLAYCENTERED, alphaval);
+              SDL_Delay(25);
+              if (exitflag != 0) break;
+            }
+            if (exitflag == 0) {
+              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 1, levcomment);
+              exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
+              if (exitflag == 0) exitflag = wait_for_a_key(2, renderer);
+            }
             curlevel += 1;
             /* load the new level and reset states */
-            memcpy(&game, gameslist[curlevel], sizeof(game));
-            sok_resetstates(&states);
+            loadlevel(&game, gameslist[curlevel], states);
           }
         }
     }
 
     if (exitflag != 0) break;
   }
+
+  /* free the states struct */
+  sok_freestates(states);
 
   /* free all textures */
   if (sprites->atom) SDL_DestroyTexture(sprites->atom);
@@ -663,7 +753,7 @@ int main(int argc, char **argv) {
   if (sprites->cleared) SDL_DestroyTexture(sprites->cleared);
   if (sprites->help) SDL_DestroyTexture(sprites->help);
   for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
-  for (x = 0; x < 64; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);
+  for (x = 0; x < 128; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);
 
   /* clean up SDL */
   flush_events();

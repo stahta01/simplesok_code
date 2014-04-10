@@ -311,6 +311,16 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
   int res = 0;
   int x, y, vectorx = 0, vectory = 0, alreadysolved;
   char historychar = ' ';
+  /* first of all let's check if we have enough place in history for a potential move - if not, realloc some place */
+  if (states->movescount + 3 >= states->historyallocsize) {
+    states->historyallocsize *= 2;
+    states->history = realloc(states->history, states->historyallocsize);
+    if (states->history == NULL) {
+      printf("failed to allocate %ld bytes for history buffer!\n", states->historyallocsize);
+      return(-1);
+    }
+  }
+  /* now let's do our real stuff */
   alreadysolved = sok_checksolution(game, NULL);
   x = game->positionx;
   y = game->positiony;
@@ -353,12 +363,9 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
     }
   }
   if (validitycheck == 0) {
-    if (states->movescount >= (int)sizeof(states->history) - 1) states->movescount = -1; /* 'undo' overflow protection */
-    if (states->movescount >= 0) {
-      states->history[states->movescount] = historychar;
-      states->movescount += 1;
-      states->history[states->movescount] = 0; /* makes it a null-terminated string in case anyone would want to print it as-is */
-    }
+    states->history[states->movescount] = historychar;
+    states->movescount += 1;
+    states->history[states->movescount] = 0; /* makes it a null-terminated string in case anyone would want to print it as-is */
     game->positiony += vectory;
     game->positionx += vectorx;
   }
@@ -367,7 +374,26 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
 }
 
 void sok_resetstates(struct sokgamestates *states) {
+  if (states->history != NULL) free(states->history);
   memset(states, 0, sizeof(struct sokgamestates));
+  states->historyallocsize = 64;
+  states->history = malloc(states->historyallocsize);
+  if (states->history != NULL) memset(states->history, 0, states->historyallocsize);
+}
+
+struct sokgamestates *sok_newstates(void) {
+  struct sokgamestates *result;
+  result = malloc(sizeof(struct sokgamestates));
+  if (result == NULL) return(NULL);
+  memset(result, 0, sizeof(struct sokgamestates));
+  sok_resetstates(result);
+  return(result);
+}
+
+void sok_freestates(struct sokgamestates *states) {
+  if (states == NULL) return;
+  if (states->history != NULL) free(states->history);
+  free(states);
 }
 
 void sok_undo(struct sokgame *game, struct sokgamestates *states) {

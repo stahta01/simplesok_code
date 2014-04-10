@@ -1,10 +1,7 @@
 for 1.0:
  - when moving the level, make the scrolling gentle (same rate as player's movement)
- - embedd "classic" levels (as designed by Thinking Rabbit in late 1981)
- - create a menu to choose levels family (microban(easy) classic sasquatch(hard)) - this might be integrated with the intro screen
  - create menu to choose levels, with only 3 unsolved levels being unlocked
- - organize ingame texts in some cleaner way
- - add the name of the level collection onscreen
+ - organize ingame texts in some cleaner way - implement some text-align capabilities in draw_string()
 
 undefined future:
  - allow to play the solution (if any)
