@@ -37,7 +37,12 @@
 #define DISPLAYCENTERED 1
 #define NOREFRESH 2
 
+#define DRAWSTRING_CENTER -1
+#define DRAWSTRING_RIGHT -2
+#define DRAWSTRING_BOTTOM -3
 
+#define FONT_SPACE_WIDTH 12
+#define FONT_KERNING -3
 
 struct spritesstruct {
   SDL_Texture *atom;
@@ -157,24 +162,42 @@ static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Wind
 }
 
 /* provides width and height of a string (in pixels) */
-static void get_string_size(SDL_Texture *texture, int *w, int *h) {
-  /* WRITEME */
-  /* SDL_QueryTexture(texture, NULL, NULL, &rect.w, &rect.h); */
+static void get_string_size(char *string, struct spritesstruct *sprites, int *w, int *h) {
+  int glyphw, glyphh;
+  *w = 0;
+  *h = 0;
+  while (*string != 0) {
+    if (*string == ' ') {
+        *w += FONT_SPACE_WIDTH;
+      } else {
+        SDL_QueryTexture(sprites->font[char2fontid(*string)], NULL, NULL, &glyphw, &glyphh);
+        *w += glyphw + FONT_KERNING;
+        if (glyphh > *h) *h = glyphh;
+    }
+    string += 1;
+  }
 }
 
 static void draw_string(char *string, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y, SDL_Window *window) {
-  int i, winw, winh;
+  int i;
   SDL_Texture *glyph;
   SDL_Rect rectsrc, rectdst;
-  /* get size of the window */
-  SDL_GetWindowSize(window, &winw, &winh);
-  /* get size of the string */
-  /* WRITEME */
+  /* if centering is requested, get size of the string */
+  if ((x < 0) || (y < 0)) {
+    int winw, winh, stringw, stringh;
+    /* get size of the window */
+    SDL_GetWindowSize(window, &winw, &winh);
+    /* get pixel length of the string */
+    get_string_size(string, sprites, &stringw, &stringh);
+    if (x == DRAWSTRING_CENTER) x = (winw - stringw) >> 1;
+    if (x == DRAWSTRING_RIGHT) x = winw - stringw - 10;
+    if (y == DRAWSTRING_BOTTOM) y = winh - stringh;
+  }
   rectdst.x = x;
   rectdst.y = y;
   for (i = 0; string[i] != 0; i++) {
     if (string[i] == ' ') {
-      rectdst.x += 12;
+      rectdst.x += FONT_SPACE_WIDTH;
       continue;
     }
     glyph = sprites->font[char2fontid(string[i])];
@@ -182,7 +205,7 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
     rectdst.w = rectsrc.w;
     rectdst.h = rectsrc.h;
     SDL_RenderCopy(renderer, glyph, NULL, &rectdst);
-    rectdst.x += (rectsrc.w - 3);
+    rectdst.x += (rectsrc.w + FONT_KERNING);
   }
 }
 
@@ -315,15 +338,15 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   }
   /* draw text */
   sprintf(stringbuff, "%s, level %d", levelname, game->level);
-  draw_string(stringbuff, sprites, renderer, 10, 0, window);
+  draw_string(stringbuff, sprites, renderer, 10, DRAWSTRING_BOTTOM, window);
   if (game->solution != NULL) {
       sprintf(stringbuff, "best score: %ld/%ld", sok_history_getlen(game->solution), sok_history_getpushes(game->solution));
     } else {
       sprintf(stringbuff, "best score: -");
   }
-  draw_string(stringbuff, sprites, renderer, 10, 25, window);
-  sprintf(stringbuff, "moves/pushes: %ld/%ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
-  draw_string(stringbuff, sprites, renderer, 10, 50, window);
+  draw_string(stringbuff, sprites, renderer, DRAWSTRING_RIGHT, 0, window);
+  sprintf(stringbuff, "moves: %ld / pushes: %ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
+  draw_string(stringbuff, sprites, renderer, 10, 0, window);
   /* Update the screen */
   if (skiprefresh == 0) SDL_RenderPresent(renderer);
 }
