@@ -78,8 +78,9 @@ static int char2fontid(char c) {
     case ']': return(73);
     case '-': return(74);
     case '_': return(75);
+    case '/': return(76);
   }
-  /* anything else... */
+  /* if anything else, return 'underscore'... */
   return(75);
 }
 
@@ -155,10 +156,20 @@ static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Wind
   return(0);
 }
 
-static void draw_string(char *string, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y) {
-  int i;
+/* provides width and height of a string (in pixels) */
+static void get_string_size(SDL_Texture *texture, int *w, int *h) {
+  /* WRITEME */
+  /* SDL_QueryTexture(texture, NULL, NULL, &rect.w, &rect.h); */
+}
+
+static void draw_string(char *string, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y, SDL_Window *window) {
+  int i, winw, winh;
   SDL_Texture *glyph;
   SDL_Rect rectsrc, rectdst;
+  /* get size of the window */
+  SDL_GetWindowSize(window, &winw, &winh);
+  /* get size of the string */
+  /* WRITEME */
   rectdst.x = x;
   rectdst.y = y;
   for (i = 0; string[i] != 0; i++) {
@@ -304,15 +315,15 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   }
   /* draw text */
   sprintf(stringbuff, "%s, level %d", levelname, game->level);
-  draw_string(stringbuff, sprites, renderer, 10, 0);
+  draw_string(stringbuff, sprites, renderer, 10, 0, window);
   if (game->solution != NULL) {
-      sprintf(stringbuff, "best score: %ld", (long)strlen(game->solution));
+      sprintf(stringbuff, "best score: %ld/%ld", sok_history_getlen(game->solution), sok_history_getpushes(game->solution));
     } else {
       sprintf(stringbuff, "best score: -");
   }
-  draw_string(stringbuff, sprites, renderer, 10, 25);
-  sprintf(stringbuff, "moves: %ld", states->movescount);
-  draw_string(stringbuff, sprites, renderer, 10, 50);
+  draw_string(stringbuff, sprites, renderer, 10, 25, window);
+  sprintf(stringbuff, "moves/pushes: %ld/%ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
+  draw_string(stringbuff, sprites, renderer, 10, 50, window);
   /* Update the screen */
   if (skiprefresh == 0) SDL_RenderPresent(renderer);
 }
@@ -413,9 +424,9 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     rect.w = tilesize;
     rect.h = tilesize;
     SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
-    draw_string("Easy (aka Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0);
-    draw_string("Original & Extra", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1);
-    draw_string("Hard (aka Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2);
+    draw_string("Easy (aka Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0, window);
+    draw_string("Original & Extra", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1, window);
+    draw_string("Hard (aka Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2, window);
     SDL_RenderPresent(renderer);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
@@ -589,6 +600,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid(']')], renderer, font_sym_bra2_png, font_sym_bra2_png_len);
   loadGraphic(&sprites->font[char2fontid('-')], renderer, font_sym_minu_png, font_sym_minu_png_len);
   loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_png, font_sym_unde_png_len);
+  loadGraphic(&sprites->font[char2fontid('/')], renderer, font_sym_slas_png, font_sym_slas_png_len);
 
   /* Hide the mouse cursor and disable mouse events */
   SDL_ShowCursor(SDL_DISABLE);

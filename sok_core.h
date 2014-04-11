@@ -40,7 +40,6 @@
 
   struct sokgamestates {
     int angle;
-    long movescount;
     char *history;
     long historyallocsize;
   };
@@ -69,6 +68,12 @@
 
   /* undo last move */
   void sok_undo(struct sokgame *game, struct sokgamestates *states);
+
+  /* returns the number of moves in a history string */
+  long sok_history_getlen(char *history);
+
+  /* returns the number of pushes in a history string */
+  long sok_history_getpushes(char *history);
 
   /* reset game's states */
   void sok_resetstates(struct sokgamestates *states);

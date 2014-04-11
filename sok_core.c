@@ -43,6 +43,26 @@ static void trim(char *comment) {
   }
 }
 
+long sok_history_getlen(char *history) {
+  int res = 0;
+  if (history == NULL) return(0);
+  while (*history != 0) {
+    res += 1;
+    history += 1;
+  }
+  return(res);
+}
+
+long sok_history_getpushes(char *history) {
+  int res = 0;
+  if (history == NULL) return(0);
+  while (*history != 0) {
+    if ((*history >= 'A') && (*history <= 'Z')) res += 1;
+    history += 1;
+  }
+  return(res);
+}
+
 static struct sokgame *sok_allocgame(void) {
   struct sokgame *result;
   result = malloc(sizeof(struct sokgame));
@@ -292,6 +312,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
 /* checks if level is solved yet. returns 0 if not, non-zero otherwise. */
 int sok_checksolution(struct sokgame *game, struct sokgamestates *states) {
   int x, y;
+  long bestscorelen, bestscorepushes, myscorelen, myscorepushes, betterflag = 0;
   for (y = 0; y < game->field_height; y++) {
     for (x = 0; x < game->field_width; x++) {
       if (((game->field[x][y] & field_goal) != 0) && ((game->field[x][y] & field_atom) == 0)) return(0);
@@ -299,10 +320,16 @@ int sok_checksolution(struct sokgame *game, struct sokgamestates *states) {
   }
   /* no non-filled goal found = level completed! */
   if (states == NULL) return(1);
-  /* Check if the solution is better than the one we have */
-  if ((game->solution == NULL) || (strlen(game->solution) > (unsigned)states->movescount)) {
-    solution_save(game->crc32, states->history);
-  }
+  /* Check if the solution is better than the one we had so far */
+  bestscorelen = sok_history_getlen(game->solution);
+  bestscorepushes = sok_history_getpushes(game->solution);
+  myscorelen = sok_history_getlen(states->history);
+  myscorepushes = sok_history_getpushes(states->history);
+  if (bestscorelen < 1) betterflag = 1;
+  if (bestscorelen > myscorelen) betterflag = 1;
+  if ((bestscorelen == myscorelen) && (bestscorepushes > myscorepushes)) betterflag = 1;
+  /* if our solution is better, save it */
+  if (betterflag != 0) solution_save(game->crc32, states->history);
   return(1);
 }
 
@@ -311,8 +338,10 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
   int res = 0;
   int x, y, vectorx = 0, vectory = 0, alreadysolved;
   char historychar = ' ';
+  long movescount;
+  movescount = sok_history_getlen(states->history);
   /* first of all let's check if we have enough place in history for a potential move - if not, realloc some place */
-  if (states->movescount + 3 >= states->historyallocsize) {
+  if (movescount + 3 >= states->historyallocsize) {
     states->historyallocsize *= 2;
     states->history = realloc(states->history, states->historyallocsize);
     if (states->history == NULL) {
@@ -363,9 +392,8 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
     }
   }
   if (validitycheck == 0) {
-    states->history[states->movescount] = historychar;
-    states->movescount += 1;
-    states->history[states->movescount] = 0; /* makes it a null-terminated string in case anyone would want to print it as-is */
+    states->history[movescount] = historychar;
+    states->history[movescount + 1] = 0; /* makes it a null-terminated string in case anyone would want to print it as-is */
     game->positiony += vectory;
     game->positionx += vectorx;
   }
@@ -397,10 +425,11 @@ void sok_freestates(struct sokgamestates *states) {
 }
 
 void sok_undo(struct sokgame *game, struct sokgamestates *states) {
-  int movex = 0, movey = 0;
-  if (states->movescount < 1) return;
-  states->movescount -= 1;
-  switch (states->history[states->movescount]) {
+  int movex = 0, movey = 0, movescount;
+  movescount = sok_history_getlen(states->history);
+  if (movescount < 1) return;
+  movescount -= 1;
+  switch (states->history[movescount]) {
     case 'u':
     case 'U':
       movey = 1;
@@ -423,11 +452,11 @@ void sok_undo(struct sokgame *game, struct sokgamestates *states) {
       break;
   }
   /* if it was a PUSH action, then move the atom back */
-  if ((states->history[states->movescount] >= 'A') && ((states->history[states->movescount] <= 'Z'))) {
+  if ((states->history[movescount] >= 'A') && ((states->history[movescount] <= 'Z'))) {
     game->field[game->positionx - movex][game->positiony - movey] &= ~field_atom;
     game->field[game->positionx][game->positiony] |= field_atom;
   }
   game->positionx += movex;
   game->positiony += movey;
-  states->history[states->movescount] = 0;
+  states->history[movescount] = 0;
 }

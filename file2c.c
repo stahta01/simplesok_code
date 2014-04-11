@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h> /* needed for strdup() */
 
 /* creates a suitable variable name from a filename (replacing all invalid chars by underscores) */
