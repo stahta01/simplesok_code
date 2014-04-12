@@ -44,6 +44,9 @@
 #define FONT_SPACE_WIDTH 12
 #define FONT_KERNING -3
 
+#define SELECTLEVEL_BACK -1
+#define SELECTLEVEL_QUIT -2
+
 struct spritesstruct {
   SDL_Texture *atom;
   SDL_Texture *atom_on_goal;
@@ -437,7 +440,6 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   SDL_Event event;
   SDL_Rect rect;
 
-  /* display the intro screen, and wait for a keypress during a few seconds */
   for (;;) {
     SDL_GetWindowSize(window, &winw, &winh);
     displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
@@ -483,20 +485,94 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   if (exitflag != 0) return(NULL);
 }
 
-static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites) {
-  int curlevel;
+static void RenderCopyWithAlpha(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Rect *rect, int alpha) {
+  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+  SDL_SetTextureAlphaMod(texture, alpha);
+  SDL_RenderCopy(renderer, texture, NULL, rect);
+  SDL_SetTextureAlphaMod(texture, 255);
+}
+
+/* blit a level preview */
+static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int tilesize, int alpha) {
+  int x, y;
+  SDL_Rect rect;
+  rect.w = tilesize;
+  rect.h = tilesize;
+  for (y = 0; y < game->field_height; y++) {
+    for (x = 0; x < game->field_width; x++) {
+      /* compute coordinates of the tile on screen */
+      rect.x = xpos + (tilesize * x) - (game->field_width * tilesize) / 2;
+      rect.y = ypos + (tilesize * y) - (game->field_height * tilesize) / 2;
+      /* draw the tile */
+      if (game->field[x][y] & field_floor) RenderCopyWithAlpha(renderer, sprites->floor, &rect, alpha);
+      if (game->field[x][y] & field_wall) RenderCopyWithAlpha(renderer, sprites->walls[0], &rect, alpha);
+    }
+  }
+}
+
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment) {
+  int i, selection, winw, winh;
+  char levelnum[64];
+  SDL_Event event;
   /* reload all solutions for levels, in case they changed (for ex. because we just solved a level..) */
   sok_loadsolutions(gameslist);
-  /* */
-  for (curlevel = 0; gameslist[curlevel] != NULL; curlevel++) {
-    if (gameslist[curlevel]->solution != NULL) {
-        printf("Level %d [%08lX] has solution: %s\n", curlevel + 1, gameslist[curlevel]->crc32, gameslist[curlevel]->solution);
+
+  /* Preselect the first unsolved level */
+  selection = 0;
+  for (i = 0; gameslist[i] != NULL; i++) {
+    if (gameslist[i]->solution != NULL) {
+        printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
       } else {
-        printf("Level %d [%08lX] has NO solution\n", curlevel + 1, gameslist[curlevel]->crc32);
+        printf("Level %d [%08lX] has NO solution\n", i + 1, gameslist[i]->crc32);
+        selection = i;
         break;
     }
   }
-  return(curlevel);
+
+  /* loop */
+  for (;;) {
+    SDL_GetWindowSize(window, &winw, &winh);
+
+    /* draw the screen */
+    SDL_RenderClear(renderer);
+    if (selection > 0) { /* draw the level before */
+      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 96);
+    }
+    if (gameslist[selection + 1] != NULL) { /* draw the level after */
+      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 96);
+    }
+    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 255);
+    draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 6, window);
+    sprintf(levelnum, "Level %d", selection + 1);
+    draw_string(levelnum, sprites, renderer, DRAWSTRING_CENTER, winh * 3 / 4, window);
+    SDL_RenderPresent(renderer);
+
+    /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
+    for (;;) if ((SDL_WaitEvent(&event) != 0) && (event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
+
+    /* check what event we got */
+    if (event.type == SDL_QUIT) {
+        return(SELECTLEVEL_QUIT);
+      } else if (event.type == SDL_KEYDOWN) {
+        switch (event.key.keysym.sym) {
+          case SDLK_LEFT:
+          case SDLK_KP_4:
+            if (selection > 0) selection--;
+            break;
+          case SDLK_RIGHT:
+          case SDLK_KP_6:
+            if (gameslist[selection + 1] != NULL) selection++;
+            break;
+          case SDLK_RETURN:
+          case SDLK_KP_ENTER:
+            return(selection);
+            break;
+          case SDLK_ESCAPE:
+            return(SELECTLEVEL_BACK);
+            break;
+        }
+    }
+  }
 }
 
 int main(int argc, char **argv) {
@@ -657,28 +733,34 @@ int main(int argc, char **argv) {
   if (states == NULL) return(1);
 
   GametypeSelectMenu:
+  levelscount = -1;
   if (levelfile != NULL) {
       levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, levcomment, LEVCOMMENTMAXLEN);
+        if (levelscount < 1) {
+          printf("Failed to load the level file! [%d]\n", levelscount);
+          exitflag = 1;
+        }
     } else {
       unsigned char *xsblevelptr;
       xsblevelptr = selectgametype(renderer, sprites, window, tilesize);
       if (xsblevelptr == NULL) {
-        exitflag = 1;
-        xsblevelptr = levels_microban_xsb;
+          exitflag = 1;
+        } else {
+          levelscount = sok_loadfile(gameslist, MAXLEVELS, NULL, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
       }
-      levelscount = sok_loadfile(gameslist, MAXLEVELS, NULL, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
-  }
-  if (levelscount < 1) {
-    printf("Failed to load the level file! [%d]\n", levelscount);
-    return(1);
   }
 
-  printf("Loaded %d levels '%s'\n", levelscount, levcomment);
+  /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
+  LevelSelectMenu:
   flush_events();
 
-  curlevel = selectlevel(gameslist, sprites);
-  loadlevel(&game, gameslist[curlevel], states);
+  if (exitflag == 0) {
+    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment);
+    if (curlevel == SELECTLEVEL_BACK) goto GametypeSelectMenu;
+    if (curlevel == SELECTLEVEL_QUIT) exitflag = 1;
+  }
+  if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
 
   if (curlevel == 0) showhelp = 1;
 
@@ -725,11 +807,7 @@ int main(int argc, char **argv) {
             loadlevel(&game, gameslist[curlevel], states);
             break;
           case SDLK_ESCAPE:
-            if (levelfile != NULL) {
-                exitflag = 1;
-              } else {
-                goto GametypeSelectMenu;
-            }
+            goto LevelSelectMenu;
             break;
         }
         if (movedir != 0) {
@@ -774,7 +852,7 @@ int main(int argc, char **argv) {
               if (exitflag == 0) exitflag = wait_for_a_key(2, renderer);
             }
             /* load the new level and reset states */
-            curlevel = selectlevel(gameslist, sprites);
+            curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment);
             loadlevel(&game, gameslist[curlevel], states);
           }
         }
