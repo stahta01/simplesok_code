@@ -483,6 +483,22 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   if (exitflag != 0) return(NULL);
 }
 
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites) {
+  int curlevel;
+  /* reload all solutions for levels, in case they changed (for ex. because we just solved a level..) */
+  sok_loadsolutions(gameslist);
+  /* */
+  for (curlevel = 0; gameslist[curlevel] != NULL; curlevel++) {
+    if (gameslist[curlevel]->solution != NULL) {
+        printf("Level %d [%08lX] has solution: %s\n", curlevel + 1, gameslist[curlevel]->crc32, gameslist[curlevel]->solution);
+      } else {
+        printf("Level %d [%08lX] has NO solution\n", curlevel + 1, gameslist[curlevel]->crc32);
+        break;
+    }
+  }
+  return(curlevel);
+}
+
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
   struct sokgamestates *states;
@@ -661,14 +677,7 @@ int main(int argc, char **argv) {
 
   flush_events();
 
-  for (curlevel = 0; curlevel + 1 < levelscount; curlevel++) {
-    if (gameslist[curlevel]->solution != NULL) {
-        printf("Level %d [%08lX] has solution: %s\n", curlevel + 1, gameslist[curlevel]->crc32, gameslist[curlevel]->solution);
-      } else {
-        printf("Level %d [%08lX] has NO solution\n", curlevel + 1, gameslist[curlevel]->crc32);
-        break;
-    }
-  }
+  curlevel = selectlevel(gameslist, sprites);
   loadlevel(&game, gameslist[curlevel], states);
 
   if (curlevel == 0) showhelp = 1;
@@ -764,8 +773,8 @@ int main(int argc, char **argv) {
               exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
               if (exitflag == 0) exitflag = wait_for_a_key(2, renderer);
             }
-            curlevel += 1;
             /* load the new level and reset states */
+            curlevel = selectlevel(gameslist, sprites);
             loadlevel(&game, gameslist[curlevel], states);
           }
         }

@@ -55,7 +55,7 @@
   #define sokmove_ongoal 2
   #define sokmove_solved 4
 
-  /* loads a level file. returns the amount of levels loaded on success, a non-positive value otherwise. */
+  /* loads a level file. returns the amount of levels loaded on success, a non-positive value otherwise. The last level ptr is guaranteed to be NULL, to mark the end of list. */
   int sok_loadfile(struct sokgame **game, int maxlevels, char *gamelevel, unsigned char *memptr, char *comment, int maxcommentlen);
 
   void sok_freefile(struct sokgame **gamelist, int gamescount);
@@ -83,5 +83,8 @@
 
   /* free the memory occupied by a previously allocated states structure */
   void sok_freestates(struct sokgamestates *states);
+
+  /* reloads solutions for all levels in a list */
+  void sok_loadsolutions(struct sokgame **gamelist);
 
 #endif
