@@ -284,7 +284,6 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     /* call loadlevelfromfile */
     loadres = loadlevelfromfile(gamelist[level], fd, &memptr, (level == 0) ? comment : NULL, maxcommentlen);
 
-    if (loadres > 0) break; /* end of file */
     if (loadres < 0) { /* error loading level data */
       if (level == 0) errflag = 1;
       sok_freegame(gamelist[level]);
@@ -295,6 +294,8 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     /* write the level num and load the solution (if any) */
     gamelist[level]->level = level + 1;
     gamelist[level]->solution = solution_load(gamelist[level]->crc32);
+    /* if end of file reached, stop now */
+    if (loadres > 0) break;
   }
 
   if (fd != NULL) fclose(fd);
