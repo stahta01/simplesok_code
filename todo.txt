@@ -1,9 +1,7 @@
 for 1.0:
  - when moving the level, make the scrolling gentle (same rate as player's movement)
- - create menu to choose levels, with only 3 unsolved levels being unlocked
- - organize ingame texts in some cleaner way - implement some text-align capabilities in draw_string()
+ - allow to play the solution (if any)
 
 undefined future:
- - allow to play the solution (if any)
  - add an internet levels mode
  - skins support

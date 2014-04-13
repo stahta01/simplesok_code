@@ -267,9 +267,6 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     if (fd == NULL) return(-1);
   }
 
-  /* set all positions to NULL - this way we will naturally end up with a NULL-terminated list. */
-  for (level = 0; level < maxlevels; level++) gamelist[level] = NULL;
-
   for (level = 0;; level++) { /* iterate to load games sequentially from the file */
     /* puts("loading level.."); */
     if (level + 1 >= maxlevels) {
@@ -311,9 +308,9 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
 }
 
 /* reloads solutions for all levels in a list */
-void sok_loadsolutions(struct sokgame **gamelist) {
+void sok_loadsolutions(struct sokgame **gamelist, int levelscount) {
   int x = 0;
-  for (x = 0; gamelist[x] != NULL; x++) {
+  for (x = 0; x < levelscount; x++) {
     gamelist[x]->solution = solution_load(gamelist[x]->crc32);
   }
 }

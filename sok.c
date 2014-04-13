@@ -57,6 +57,7 @@ struct spritesstruct {
   SDL_Texture *help;
   SDL_Texture *intro;
   SDL_Texture *player;
+  SDL_Texture *solved;
   SDL_Texture *walls[16];
   SDL_Texture *font[128];
 };
@@ -505,21 +506,28 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
       rect.y = ypos + (tilesize * y) - (game->field_height * tilesize) / 2;
       /* draw the tile */
       if (game->field[x][y] & field_floor) RenderCopyWithAlpha(renderer, sprites->floor, &rect, alpha);
-      if (game->field[x][y] & field_wall) RenderCopyWithAlpha(renderer, sprites->walls[0], &rect, alpha);
+      if (game->field[x][y] & field_wall) RenderCopyWithAlpha(renderer, sprites->walls[getwallid(game, x, y)], &rect, alpha);
+      if ((game->field[x][y] & field_goal) && (game->field[x][y] & field_atom)) { /* atom on goal */
+          RenderCopyWithAlpha(renderer, sprites->atom_on_goal, &rect, alpha);
+        } else if (game->field[x][y] & field_goal) { /* goal */
+          RenderCopyWithAlpha(renderer, sprites->goal, &rect, alpha);
+        } else if (game->field[x][y] & field_atom) { /* atom */
+          RenderCopyWithAlpha(renderer, sprites->atom, &rect, alpha);
+      }
     }
   }
 }
 
-static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment) {
-  int i, selection, winw, winh;
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment, int levelscount) {
+  int i, selection, winw, winh, maxallowedlevel;
   char levelnum[64];
   SDL_Event event;
   /* reload all solutions for levels, in case they changed (for ex. because we just solved a level..) */
-  sok_loadsolutions(gameslist);
+  sok_loadsolutions(gameslist, levelscount);
 
   /* Preselect the first unsolved level */
   selection = 0;
-  for (i = 0; gameslist[i] != NULL; i++) {
+  for (i = 0; i < levelscount; i++) {
     if (gameslist[i]->solution != NULL) {
         printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
       } else {
@@ -527,6 +535,13 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
         selection = i;
         break;
     }
+  }
+
+  /* compute the last allowed level */
+  i = 0; /* i will temporarily store the number of unsolved levels */
+  for (maxallowedlevel = 0; maxallowedlevel < levelscount; maxallowedlevel++) {
+    if (gameslist[maxallowedlevel]->solution == NULL) i++;
+    if (i > 3) break; /* user can see up to 3 unsolved levels */
   }
 
   /* loop */
@@ -537,13 +552,34 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     SDL_RenderClear(renderer);
     if (selection > 0) { /* draw the level before */
       blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 96);
+      if (gameslist[selection - 1]->solution != NULL) {
+        SDL_Rect rect;
+        SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
+        rect.x = winw / 5 - rect.w / 2;
+        rect.y = winh / 2 - rect.h / 2;
+        SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
+      }
     }
-    if (gameslist[selection + 1] != NULL) { /* draw the level after */
+    if (selection + 1 < maxallowedlevel) { /* draw the level after */
       blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 96);
+      if (gameslist[selection + 1]->solution != NULL) {
+        SDL_Rect rect;
+        SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
+        rect.x = winw * 4 / 5 - rect.w / 2;
+        rect.y = winh / 2 - rect.h / 2;
+        SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
+      }
     }
     blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 255);
+    if (gameslist[selection]->solution != NULL) {
+      SDL_Rect rect;
+      SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
+      rect.x = winw / 2 - rect.w / 2;
+      rect.y = winh / 2 - rect.h / 2;
+      SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
+    }
     draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 6, window);
-    sprintf(levelnum, "Level %d", selection + 1);
+    sprintf(levelnum, "Level %d of %d", selection + 1, levelscount);
     draw_string(levelnum, sprites, renderer, DRAWSTRING_CENTER, winh * 3 / 4, window);
     SDL_RenderPresent(renderer);
 
@@ -561,7 +597,13 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
             break;
           case SDLK_RIGHT:
           case SDLK_KP_6:
-            if (gameslist[selection + 1] != NULL) selection++;
+            if (selection + 1 < maxallowedlevel) selection++;
+            break;
+          case SDLK_HOME:
+            selection = 0;
+            break;
+          case SDLK_END:
+            selection = maxallowedlevel - 1;
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
@@ -595,6 +637,7 @@ int main(int argc, char **argv) {
 
   /* Init SDL and set the video mode */
   SDL_Init(SDL_INIT_VIDEO);
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");  /* this makes scaling nicer (use linear scaling instead of raw pixels) */
 
   window = SDL_CreateWindow("Simple Sokoban " PVER, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_DEFAULT_WIDTH, SCREEN_DEFAULT_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (window == NULL) {
@@ -621,6 +664,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->bg, renderer, skin_bg_png, skin_bg_png_len);
   loadGraphic(&sprites->cleared, renderer, img_cleared_png, img_cleared_png_len);
   loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
+  loadGraphic(&sprites->solved, renderer, img_solved_png, img_solved_png_len);
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -756,8 +800,14 @@ int main(int argc, char **argv) {
   flush_events();
 
   if (exitflag == 0) {
-    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment);
-    if (curlevel == SELECTLEVEL_BACK) goto GametypeSelectMenu;
+    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
+    if (curlevel == SELECTLEVEL_BACK) {
+      if (levelfile == NULL) {
+          goto GametypeSelectMenu;
+        } else {
+          exitflag = 1;
+      }
+    }
     if (curlevel == SELECTLEVEL_QUIT) exitflag = 1;
   }
   if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
@@ -852,7 +902,7 @@ int main(int argc, char **argv) {
               if (exitflag == 0) exitflag = wait_for_a_key(2, renderer);
             }
             /* load the new level and reset states */
-            curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment);
+            curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
             loadlevel(&game, gameslist[curlevel], states);
           }
         }
