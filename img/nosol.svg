@@ -9,12 +9,12 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="400"
-   height="300"
+   width="360.66507"
+   height="143.59183"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="help.svg"
+   sodipodi:docname="nosol.svg"
    inkscape:export-filename="/home/mateusz/svn/sok/img/intro.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
@@ -22,11 +22,16 @@
      id="defs4">
     <filter
        inkscape:collect="always"
-       id="filter3795">
+       id="filter3781"
+       x="-0.078172311"
+       width="1.1563447"
+       y="-0.25810355"
+       height="1.5162071"
+       color-interpolation-filters="sRGB">
       <feGaussianBlur
          inkscape:collect="always"
-         stdDeviation="7.2256094"
-         id="feGaussianBlur3797" />
+         stdDeviation="10.142276"
+         id="feGaussianBlur3783" />
     </filter>
   </defs>
   <sodipodi:namedview
@@ -37,8 +42,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.23"
-     inkscape:cx="-22.470151"
-     inkscape:cy="134.08074"
+     inkscape:cx="49.201655"
+     inkscape:cy="55.876626"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -47,7 +52,11 @@
      inkscape:window-x="-3"
      inkscape:window-y="-3"
      inkscape:window-maximized="1"
-     width="800px" />
+     width="800px"
+     fit-margin-top="0.3"
+     fit-margin-left="0.3"
+     fit-margin-right="0.3"
+     fit-margin-bottom="0.3" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -64,15 +73,16 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-752.36218)">
+     transform="translate(-19.667467,-830.56624)">
     <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3795)"
+       style="fill:#ff9650;fill-opacity:1;stroke:none;filter:url(#filter3781)"
        id="rect3017"
-       width="357.7236"
-       height="189.43085"
-       x="21.138199"
-       y="807.64673"
-       ry="16.93796" />
+       width="311.38214"
+       height="94.308899"
+       x="44.308929"
+       y="855.2077"
+       ry="16.93796"
+       transform="translate(1.7900391e-6,1.5966797e-6)" />
     <text
        xml:space="preserve"
        style="font-size:13px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -88,7 +98,7 @@
     <flowRoot
        xml:space="preserve"
        id="flowRoot2991"
-       style="fill:black;stroke:none;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:DOSEGA;font-style:normal;font-weight:500;font-size:12px;line-height:125%;letter-spacing:0px;word-spacing:0px;-inkscape-font-specification:DOSEGA Medium;font-stretch:normal;font-variant:normal"><flowRegion
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:DOSEGA;-inkscape-font-specification:DOSEGA Medium"><flowRegion
          id="flowRegion2993"><rect
            id="rect2995"
            width="220.32521"
@@ -99,21 +109,13 @@
        xml:space="preserve"
        id="flowRoot2999"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:DOSEGA;-inkscape-font-specification:DOSEGA Medium"
-       transform="translate(458.34326,865.98875)"><flowRegion
+       transform="translate(486.29297,925.73448)"><flowRegion
          id="flowRegion3001"><rect
            id="rect3003"
            width="318.69919"
            height="162.60161"
            x="-417.88617"
            y="-34.959351" /></flowRegion><flowPara
-         id="flowPara3005"
-         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans">Use arrow keys to push objects into their target positions. Once all objects are on targets, the level is completed, and new levels will be unlocked.</flowPara><flowPara
-         id="flowPara3007"
-         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans" /><flowPara
-         id="flowPara3009"
-         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans">Undo moves using the backspace key.</flowPara><flowPara
-         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara2999">Restart the ongoing level pressing &quot;R&quot;.</flowPara><flowPara
-         style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3001">Press &quot;S&quot; to replay the solution (if available).</flowPara></flowRoot>  </g>
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans Bold"
+         id="flowPara3001">No solution for this level yet.</flowPara></flowRoot>  </g>
 </svg>

@@ -39,6 +39,9 @@
 #define DISPLAYCENTERED 1
 #define NOREFRESH 2
 
+#define DRAWSCREEN_REFRESH 1
+#define DRAWSCREEN_PLAYBACK 2
+
 #define DRAWSTRING_CENTER -1
 #define DRAWSTRING_RIGHT -2
 #define DRAWSTRING_BOTTOM -3
@@ -55,6 +58,7 @@ struct spritesstruct {
   SDL_Texture *bg;
   SDL_Texture *black;
   SDL_Texture *cleared;
+  SDL_Texture *nosolution;
   SDL_Texture *floor;
   SDL_Texture *goal;
   SDL_Texture *help;
@@ -128,8 +132,8 @@ static void flush_events() {
 /* wait for a key up to timeout seconds (-1 = indefintely), while redrawing the renderer screen, if not null */
 static int wait_for_a_key(int timeout, SDL_Renderer *renderer) {
   SDL_Event event;
-  time_t timeouttime;
-  timeouttime = time(NULL) + timeout;
+  Uint32 timeouttime;
+  timeouttime = SDL_GetTicks() + (timeout * 1000);
   for (;;) {
     SDL_Delay(50);
     if (SDL_PollEvent(&event) != 0) {
@@ -140,7 +144,7 @@ static int wait_for_a_key(int timeout, SDL_Renderer *renderer) {
           return(0);
       }
     }
-    if ((timeout > 0) && (time(NULL) >= timeouttime)) return(0);
+    if ((timeout > 0) && (SDL_GetTicks() >= timeouttime)) return(0);
   }
 }
 
@@ -277,7 +281,7 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   return(res);
 }
 
-static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, int moveoffsetx, int moveoffsety, int scrolling, int skiprefresh, char *levelname) {
+static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, int moveoffsetx, int moveoffsety, int scrolling, int flags, char *levelname) {
   int x, y, winw, winh, offx, offy;
   /* int partialoffsetx = 0, partialoffsety = 0; */
   char stringbuff[256];
@@ -351,11 +355,12 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   draw_string(stringbuff, sprites, renderer, DRAWSTRING_RIGHT, 0, window);
   sprintf(stringbuff, "moves: %ld / pushes: %ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
   draw_string(stringbuff, sprites, renderer, 10, 0, window);
+  if ((flags & DRAWSCREEN_PLAYBACK) && (time(NULL) % 2 == 0)) draw_string("*** PLAYBACK ***", sprites, renderer, DRAWSTRING_CENTER, 32, window);
   /* Update the screen */
-  if (skiprefresh == 0) SDL_RenderPresent(renderer);
+  if (flags & DRAWSCREEN_REFRESH) SDL_RenderPresent(renderer);
 }
 
-static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levelname) {
+static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levelname, int drawscreenflags) {
   int srcangle = states->angle;
   int dstangle = 0, dirmotion, winw, winh;
   SDL_GetWindowSize(window, &winw, &winh);
@@ -403,7 +408,7 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
       if (tmpangle % 10 == 0) {
-        draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levelname);
+        draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
         SDL_Delay(10);
       }
       if (tmpangle == dstangle) break;
@@ -634,7 +639,7 @@ int main(int argc, char **argv) {
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
   int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x;
-  int tilesize;
+  int tilesize, playsolution, draw_screen_playsol;
   char *levelfile = NULL;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
@@ -677,6 +682,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->cleared, renderer, img_cleared_png, img_cleared_png_len);
   loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
   loadGraphic(&sprites->solved, renderer, img_solved_png, img_solved_png_len);
+  loadGraphic(&sprites->nosolution, renderer, img_nosol_png, img_nosol_png_len);
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -825,19 +831,30 @@ int main(int argc, char **argv) {
   if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
 
   if (curlevel == 0) showhelp = 1;
+  playsolution = 0;
 
   while (exitflag == 0) {
-    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
+    if (playsolution > 0) {
+        draw_screen_playsol = DRAWSCREEN_PLAYBACK;
+      } else {
+        draw_screen_playsol = 0;
+    }
+    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
     if (showhelp != 0) {
       exitflag = displaytexture(renderer, sprites->help, window, -1, DISPLAYCENTERED, 255);
-      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
+      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH, levcomment);
       showhelp = 0;
     }
     if (debugmode != 0) printf("history: %s\n", states->history);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) {
-      if ((SDL_WaitEvent(&event) != 0) && (event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
+      if (SDL_WaitEventTimeout(&event, 90) == 0) {
+        if (playsolution == 0) continue;
+        event.type = SDL_KEYDOWN;
+        event.key.keysym.sym = SDLK_F10;
+      }
+      if ((event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
     }
 
     /* check what event we got */
@@ -866,17 +883,51 @@ int main(int argc, char **argv) {
             sok_undo(&game, states);
             break;
           case SDLK_r:
+            playsolution = 0;
             loadlevel(&game, gameslist[curlevel], states);
             break;
+          case SDLK_s:
+            if (playsolution == 0) {
+              if (game.solution != NULL) { /* only allow if there actually is a solution */
+                  loadlevel(&game, gameslist[curlevel], states);
+                  playsolution = 1;
+                } else {
+                  exitflag = displaytexture(renderer, sprites->nosolution, window, 1, DISPLAYCENTERED, 255);
+              }
+            }
+            break;
           case SDLK_F1:
-            showhelp = 1;
+            if (playsolution == 0) showhelp = 1;
             break;
           case SDLK_ESCAPE:
             goto LevelSelectMenu;
             break;
         }
+        if (playsolution > 0) {
+          movedir = 0;
+          switch (game.solution[playsolution - 1]) {
+            case 'u':
+            case 'U':
+              movedir = sokmoveUP;
+              break;
+            case 'r':
+            case 'R':
+              movedir = sokmoveRIGHT;
+              break;
+            case 'd':
+            case 'D':
+              movedir = sokmoveDOWN;
+              break;
+            case 'l':
+            case 'L':
+              movedir = sokmoveLEFT;
+              break;
+          }
+          playsolution += 1;
+          if (game.solution[playsolution - 1] == 0) playsolution = 0;
+        }
         if (movedir != 0) {
-          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment);
+          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, draw_screen_playsol);
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
@@ -890,14 +941,14 @@ int main(int argc, char **argv) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, 0, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, 0, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
               }
             }
           }
@@ -906,21 +957,20 @@ int main(int argc, char **argv) {
             int alphaval;
             /* display a congrats message and increment level */
             for (alphaval = 0; alphaval < 255; alphaval += 30) {
-              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 1, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
               exitflag = displaytexture(renderer, sprites->cleared, window, 0, DISPLAYCENTERED, alphaval);
               SDL_Delay(25);
               if (exitflag != 0) break;
             }
             if (exitflag == 0) {
-              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 1, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
               exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
               /* fade out to black */
               if (exitflag == 0) fade2black(renderer, window, sprites);
               flush_events();
             }
             /* load the new level and reset states */
-            curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
-            loadlevel(&game, gameslist[curlevel], states);
+            goto LevelSelectMenu;
           }
         }
     }
@@ -939,6 +989,8 @@ int main(int argc, char **argv) {
   if (sprites->player) SDL_DestroyTexture(sprites->player);
   if (sprites->intro) SDL_DestroyTexture(sprites->intro);
   if (sprites->bg) SDL_DestroyTexture(sprites->bg);
+  if (sprites->black) SDL_DestroyTexture(sprites->black);
+  if (sprites->nosolution) SDL_DestroyTexture(sprites->nosolution);
   if (sprites->cleared) SDL_DestroyTexture(sprites->cleared);
   if (sprites->help) SDL_DestroyTexture(sprites->help);
   for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
