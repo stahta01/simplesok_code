@@ -41,6 +41,7 @@
 
 #define DRAWSCREEN_REFRESH 1
 #define DRAWSCREEN_PLAYBACK 2
+#define DRAWSCREEN_PUSH 4
 
 #define DRAWSTRING_CENTER -1
 #define DRAWSTRING_RIGHT -2
@@ -116,7 +117,7 @@ static int getoffsetv(struct sokgame *game, int winh, int tilesize) {
   /* if playfield is smaller than the screen */
   if (game->field_height * tilesize <= winh) return((winh / 2) - (game->field_height * tilesize / 2));
   /* if playfield is larger than the screen */
-  if (game->positiony * tilesize > winh / 2) {
+  if (game->positiony * tilesize + (tilesize / 2) > winh / 2) {
     int res = (winh / 2) - (game->positiony * tilesize + (tilesize / 2));
     if ((game->field_height * tilesize) + res < winh) res = winh - (game->field_height * tilesize);
     return(res);
@@ -227,7 +228,10 @@ static int getwallid(struct sokgame *game, int x, int y) {
   return(res);
 }
 
-static void draw_playfield_tile(struct sokgame *game, int x, int y, struct spritesstruct *sprites, SDL_Renderer *renderer, int winw, int winh, int tilesize, int drawatom, int moveoffsetx, int moveoffsety) {
+#define DRAWPLAYFIELDTILE_DRAWATOM 1
+#define DRAWPLAYFIELDTILE_PUSH 2
+
+static void draw_playfield_tile(struct sokgame *game, int x, int y, struct spritesstruct *sprites, SDL_Renderer *renderer, int winw, int winh, int tilesize, int flags, int moveoffsetx, int moveoffsety) {
   SDL_Rect rect;
   /* compute the dst rect */
   rect.x = getoffseth(game, winw, tilesize) + (x * tilesize) + moveoffsetx;
@@ -235,7 +239,7 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
   rect.w = tilesize;
   rect.h = tilesize;
 
-  if (drawatom == 0) {
+  if ((flags & DRAWPLAYFIELDTILE_DRAWATOM) == 0) {
       if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
       if (game->field[x][y] & field_goal) SDL_RenderCopy(renderer, sprites->goal, NULL, &rect);
       if (game->field[x][y] & field_wall) SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
@@ -243,10 +247,12 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
       int atomongoal = 0;
       if ((game->field[x][y] & field_goal) && (game->field[x][y] & field_atom)) {
         atomongoal = 1;
-        if ((game->positionx == x - 1) && (game->positiony == y) && (moveoffsetx > 0) && ((game->field[x + 1][y] & field_goal) == 0)) atomongoal = 0;
-        if ((game->positionx == x + 1) && (game->positiony == y) && (moveoffsetx < 0) && ((game->field[x - 1][y] & field_goal) == 0)) atomongoal = 0;
-        if ((game->positionx == x) && (game->positiony == y - 1) && (moveoffsety > 0) && ((game->field[x][y + 1] & field_goal) == 0)) atomongoal = 0;
-        if ((game->positionx == x) && (game->positiony == y + 1) && (moveoffsety < 0) && ((game->field[x][y - 1] & field_goal) == 0)) atomongoal = 0;
+        if (flags & DRAWPLAYFIELDTILE_PUSH) {
+          if ((game->positionx == x - 1) && (game->positiony == y) && (moveoffsetx > 0) && ((game->field[x + 1][y] & field_goal) == 0)) atomongoal = 0;
+          if ((game->positionx == x + 1) && (game->positiony == y) && (moveoffsetx < 0) && ((game->field[x - 1][y] & field_goal) == 0)) atomongoal = 0;
+          if ((game->positionx == x) && (game->positiony == y - 1) && (moveoffsety > 0) && ((game->field[x][y + 1] & field_goal) == 0)) atomongoal = 0;
+          if ((game->positionx == x) && (game->positiony == y + 1) && (moveoffsety < 0) && ((game->field[x][y - 1] & field_goal) == 0)) atomongoal = 0;
+        }
       }
       if (atomongoal != 0) {
           SDL_RenderCopy(renderer, sprites->atom_on_goal, NULL, &rect);
@@ -286,8 +292,11 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   /* int partialoffsetx = 0, partialoffsety = 0; */
   char stringbuff[256];
   int scrollingadjx = 0, scrollingadjy = 0; /* this is used when scrolling + movement of player is needed */
+  int drawtile_flags = 0;
   SDL_GetWindowSize(window, &winw, &winh);
   SDL_RenderCopy(renderer, sprites->bg, NULL, NULL);
+
+  if (flags & DRAWSCREEN_PUSH) drawtile_flags = DRAWPLAYFIELDTILE_PUSH;
 
   if (scrolling > 0) {
     if (moveoffsetx > scrolling) {
@@ -311,9 +320,9 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   for (y = 0; y < game->field_height; y++) {
     for (x = 0; x < game->field_width; x++) {
       if (scrolling != 0) {
-          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, 0, -moveoffsetx, -moveoffsety);
+          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, drawtile_flags, -moveoffsetx, -moveoffsety);
         } else {
-          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, 0, 0, 0);
+          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, drawtile_flags, 0, 0);
       }
     }
   }
@@ -335,7 +344,7 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
           if ((moveoffsety > 0) && (y == game->positiony + 1) && (x == game->positionx)) offy = scrollingadjy;
           if ((moveoffsety < 0) && (y == game->positiony - 1) && (x == game->positionx)) offy = scrollingadjy;
       }
-      draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, 1, offx, offy);
+      draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, DRAWPLAYFIELDTILE_DRAWATOM, offx, offy);
     }
   }
   /* draw where the player is */
@@ -930,7 +939,8 @@ int main(int argc, char **argv) {
           rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, draw_screen_playsol);
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
-            int offset, offsetx = 0, offsety = 0, scrolling;
+            int offset, offsetx = 0, offsety = 0, scrolling, drawscreenflags = 0;
+            if (res & sokmove_pushed) drawscreenflags = DRAWSCREEN_PUSH;
             /* How will I need to move? */
             if (movedir == sokmoveUP) offsety = -1;
             if (movedir == sokmoveRIGHT) offsetx = 1;
@@ -941,14 +951,14 @@ int main(int argc, char **argv) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol | drawscreenflags, levcomment);
               }
             }
           }
