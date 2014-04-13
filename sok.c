@@ -28,7 +28,7 @@
 #include "data_fnt.h"                 /* embedded font files */
 #include "data_skn.h"                 /* embedded skin files */
 
-#define PVER "v1.0 alpha"
+#define PVER "v1.0 beta"
 
 #define debugmode 0
 
