@@ -1,7 +1,0 @@
-for 1.0:
- - when moving the level, make the scrolling gentle (same rate as player's movement)
- - allow to play the solution (if any)
-
-undefined future:
- - add an internet levels mode
- - skins support
