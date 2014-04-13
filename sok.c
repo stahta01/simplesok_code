@@ -30,6 +30,8 @@
 
 #define PVER "v1.0 alpha"
 
+#define debugmode 0
+
 #define MAXLEVELS 1024
 #define SCREEN_DEFAULT_WIDTH 800
 #define SCREEN_DEFAULT_HEIGHT 600
@@ -51,6 +53,7 @@ struct spritesstruct {
   SDL_Texture *atom;
   SDL_Texture *atom_on_goal;
   SDL_Texture *bg;
+  SDL_Texture *black;
   SDL_Texture *cleared;
   SDL_Texture *floor;
   SDL_Texture *goal;
@@ -122,7 +125,7 @@ static void flush_events() {
   while (SDL_PollEvent(&event) != 0);
 }
 
-/* wait for a key up to timeout seconds (0 = indefintely), while redrawing the renderer screen, if not null */
+/* wait for a key up to timeout seconds (-1 = indefintely), while redrawing the renderer screen, if not null */
 static int wait_for_a_key(int timeout, SDL_Renderer *renderer) {
   SDL_Event event;
   time_t timeouttime;
@@ -134,13 +137,10 @@ static int wait_for_a_key(int timeout, SDL_Renderer *renderer) {
       if (event.type == SDL_QUIT) {
           return(1);
         } else if (event.type == SDL_KEYDOWN) {
-          if (event.key.keysym.sym == SDLK_ESCAPE) return(1);
           return(0);
       }
     }
-    if (timeout > 0) {
-      if (time(NULL) >= timeouttime) return(0);
-    }
+    if ((timeout > 0) && (time(NULL) >= timeouttime)) return(0);
   }
 }
 
@@ -161,7 +161,7 @@ static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Wind
   SDL_SetTextureAlphaMod(texture, alpha);
   SDL_RenderCopy(renderer, texture, NULL, rectptr);
   if ((flags & NOREFRESH) == 0) SDL_RenderPresent(renderer);
-  if (timeout > 0) return(wait_for_a_key(timeout, renderer));
+  if (timeout != 0) return(wait_for_a_key(timeout, renderer));
   return(0);
 }
 
@@ -529,9 +529,9 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
   selection = 0;
   for (i = 0; i < levelscount; i++) {
     if (gameslist[i]->solution != NULL) {
-        printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
+        if (debugmode != 0) printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
       } else {
-        printf("Level %d [%08lX] has NO solution\n", i + 1, gameslist[i]->crc32);
+        if (debugmode != 0) printf("Level %d [%08lX] has NO solution\n", i + 1, gameslist[i]->crc32);
         selection = i;
         break;
     }
@@ -551,7 +551,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* draw the screen */
     SDL_RenderClear(renderer);
     if (selection > 0) { /* draw the level before */
-      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 96);
+      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 80);
       if (gameslist[selection - 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -561,7 +561,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
       }
     }
     if (selection + 1 < maxallowedlevel) { /* draw the level after */
-      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 96);
+      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 80);
       if (gameslist[selection + 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -570,7 +570,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
         SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
       }
     }
-    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 255);
+    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 196);
     if (gameslist[selection]->solution != NULL) {
       SDL_Rect rect;
       SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -578,7 +578,8 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
       rect.y = winh / 2 - rect.h / 2;
       SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
     }
-    draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 6, window);
+    draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 8, window);
+    draw_string("(choose a level)", sprites, renderer, DRAWSTRING_CENTER, winh / 8 + 40, window);
     sprintf(levelnum, "Level %d of %d", selection + 1, levelscount);
     draw_string(levelnum, sprites, renderer, DRAWSTRING_CENTER, winh * 3 / 4, window);
     SDL_RenderPresent(renderer);
@@ -615,6 +616,16 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
         }
     }
   }
+}
+
+static int fade2black(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites) {
+  int alphaval, exitflag = 0;
+  for (alphaval = 0; alphaval < 64; alphaval += 3) {
+    exitflag = displaytexture(renderer, sprites->black, window, 0, 0, alphaval);
+    if (exitflag != 0) break;
+    SDL_Delay(30);
+  }
+  return(exitflag);
 }
 
 int main(int argc, char **argv) {
@@ -662,6 +673,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->player, renderer, skin_player_png, skin_player_png_len);
   loadGraphic(&sprites->intro, renderer, img_intro_png, img_intro_png_len);
   loadGraphic(&sprites->bg, renderer, skin_bg_png, skin_bg_png_len);
+  loadGraphic(&sprites->black, renderer, img_black_png, img_black_png_len);
   loadGraphic(&sprites->cleared, renderer, img_cleared_png, img_cleared_png_len);
   loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
   loadGraphic(&sprites->solved, renderer, img_solved_png, img_solved_png_len);
@@ -817,11 +829,11 @@ int main(int argc, char **argv) {
   while (exitflag == 0) {
     draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
     if (showhelp != 0) {
-      exitflag = displaytexture(renderer, sprites->help, window, 0, DISPLAYCENTERED, 255);
+      exitflag = displaytexture(renderer, sprites->help, window, -1, DISPLAYCENTERED, 255);
       draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
       showhelp = 0;
     }
-    printf("history: %s\n", states->history);
+    if (debugmode != 0) printf("history: %s\n", states->history);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) {
@@ -855,6 +867,9 @@ int main(int argc, char **argv) {
             break;
           case SDLK_r:
             loadlevel(&game, gameslist[curlevel], states);
+            break;
+          case SDLK_F1:
+            showhelp = 1;
             break;
           case SDLK_ESCAPE:
             goto LevelSelectMenu;
@@ -899,7 +914,9 @@ int main(int argc, char **argv) {
             if (exitflag == 0) {
               draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 1, levcomment);
               exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
-              if (exitflag == 0) exitflag = wait_for_a_key(2, renderer);
+              /* fade out to black */
+              if (exitflag == 0) fade2black(renderer, window, sprites);
+              flush_events();
             }
             /* load the new level and reset states */
             curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
