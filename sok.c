@@ -27,8 +27,9 @@
 #include "data_img.h"                 /* embedded level files */
 #include "data_fnt.h"                 /* embedded font files */
 #include "data_skn.h"                 /* embedded skin files */
+#include "data_ico.h"                 /* embedded the icon file */
 
-#define PVER "v1.0 beta"
+#define PVER "v1.0"
 
 #define debugmode 0
 
@@ -201,6 +202,7 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
     if (x == DRAWSTRING_CENTER) x = (winw - stringw) >> 1;
     if (x == DRAWSTRING_RIGHT) x = winw - stringw - 10;
     if (y == DRAWSTRING_BOTTOM) y = winh - stringh;
+    if (y == DRAWSTRING_CENTER) y = (winh - stringh) / 2;
   }
   rectdst.x = x;
   rectdst.y = y;
@@ -447,7 +449,8 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
   sok_resetstates(states);
 }
 
-static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize) {
+/* waits for the user to choose a game type or to load an external xsb file and returns either a pointer to a memory chunk with xsb data or to fill levelfile with a filename */
+static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize, char **levelfile) {
   int exitflag, winw, winh;
   static int selection = 0;
   unsigned char *memptr[3] = {levels_microban_xsb, levels_original_xsb, levels_sasquatch_xsb};
@@ -475,6 +478,11 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     /* check what event we got */
     if (event.type == SDL_QUIT) {
         return(NULL);
+      } else if (event.type == SDL_DROPFILE) {
+        if (event.drop.file != NULL) {
+          *levelfile = event.drop.file;
+          return(NULL);
+        }
       } else if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
           case SDLK_UP:
@@ -642,6 +650,17 @@ static int fade2black(SDL_Renderer *renderer, SDL_Window *window, struct sprites
   return(exitflag);
 }
 
+static void setsokicon(SDL_Window *window) {
+  SDL_Surface *surface;
+  SDL_RWops *rwop;
+  rwop = SDL_RWFromMem(simplesok_png, simplesok_png_len);
+  surface = IMG_LoadPNG_RW(rwop);
+  SDL_FreeRW(rwop);
+  if (surface == NULL) return;
+  SDL_SetWindowIcon(window, surface);
+  SDL_FreeSurface(surface); /* once the icon is loaded, the surface is not needed anymore */
+}
+
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
   struct sokgamestates *states;
@@ -670,6 +689,7 @@ int main(int argc, char **argv) {
     return(1);
   }
 
+  setsokicon(window);
   SDL_SetWindowMinimumSize(window, 160, 120);
 
   renderer = SDL_CreateRenderer(window, -1, 0);
@@ -788,9 +808,10 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_png, font_sym_unde_png_len);
   loadGraphic(&sprites->font[char2fontid('/')], renderer, font_sym_slas_png, font_sym_slas_png_len);
 
-  /* Hide the mouse cursor and disable mouse events */
+  /* Hide the mouse cursor, disable mouse events and make sure DropEvents are enabled (sometimes they are not) */
   SDL_ShowCursor(SDL_DISABLE);
   SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+  SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
   if (argc == 2) levelfile = argv[1];
 
@@ -807,18 +828,22 @@ int main(int argc, char **argv) {
   levelscount = -1;
   if (levelfile != NULL) {
       levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, levcomment, LEVCOMMENTMAXLEN);
-        if (levelscount < 1) {
-          printf("Failed to load the level file! [%d]\n", levelscount);
-          exitflag = 1;
-        }
     } else {
       unsigned char *xsblevelptr;
-      xsblevelptr = selectgametype(renderer, sprites, window, tilesize);
-      if (xsblevelptr == NULL) {
+      xsblevelptr = selectgametype(renderer, sprites, window, tilesize, &levelfile);
+      if ((xsblevelptr == NULL) && (levelfile == NULL)) {
           exitflag = 1;
         } else {
-          levelscount = sok_loadfile(gameslist, MAXLEVELS, NULL, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
+          levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
       }
+  }
+
+  if ((levelscount < 1) && (exitflag == 0)) {
+    SDL_RenderClear(renderer);
+    printf("Failed to load the level file! [%d]\n", levelscount);
+    draw_string("Failed to load the level file!", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+    wait_for_a_key(-1, renderer);
+    exitflag = 1;
   }
 
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
@@ -858,7 +883,7 @@ int main(int argc, char **argv) {
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) {
-      if (SDL_WaitEventTimeout(&event, 90) == 0) {
+      if (SDL_WaitEventTimeout(&event, 80) == 0) {
         if (playsolution == 0) continue;
         event.type = SDL_KEYDOWN;
         event.key.keysym.sym = SDLK_F10;
@@ -889,11 +914,21 @@ int main(int argc, char **argv) {
             movedir = sokmoveDOWN;
             break;
           case SDLK_BACKSPACE:
-            sok_undo(&game, states);
+            if (playsolution == 0) sok_undo(&game, states);
             break;
           case SDLK_r:
             playsolution = 0;
             loadlevel(&game, gameslist[curlevel], states);
+            break;
+          case SDLK_F5: /* save solution to clipboard, if any */
+            if (game.solution != NULL) { /* only allow if there actually is a solution */
+                  SDL_SetClipboardText(game.solution);
+                  fade2black(renderer, window, sprites);
+                  draw_string("Solution copied to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+                  wait_for_a_key(2, renderer);
+                } else {
+                  exitflag = displaytexture(renderer, sprites->nosolution, window, 1, DISPLAYCENTERED, 255);
+            }
             break;
           case SDLK_s:
             if (playsolution == 0) {
@@ -972,6 +1007,7 @@ int main(int argc, char **argv) {
               SDL_Delay(25);
               if (exitflag != 0) break;
             }
+            flush_events();
             if (exitflag == 0) {
               draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
               exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
