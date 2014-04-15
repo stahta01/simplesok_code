@@ -61,6 +61,9 @@ struct spritesstruct {
   SDL_Texture *black;
   SDL_Texture *cleared;
   SDL_Texture *nosolution;
+  SDL_Texture *congrats;
+  SDL_Texture *copiedtoclipboard;
+  SDL_Texture *snapshottoclipboard;
   SDL_Texture *floor;
   SDL_Texture *goal;
   SDL_Texture *help;
@@ -640,16 +643,18 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
   }
 }
 
-static int fade2black(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites) {
+static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture) {
   int alphaval, exitflag = 0;
   for (alphaval = 0; alphaval < 64; alphaval += 3) {
-    exitflag = displaytexture(renderer, sprites->black, window, 0, 0, alphaval);
+    exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
     if (exitflag != 0) break;
     SDL_Delay(30);
   }
+  if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
   return(exitflag);
 }
 
+/* sets the icon in the aplication's title bar */
 static void setsokicon(SDL_Window *window) {
   SDL_Surface *surface;
   SDL_RWops *rwop;
@@ -661,12 +666,74 @@ static void setsokicon(SDL_Window *window) {
   SDL_FreeSurface(surface); /* once the icon is loaded, the surface is not needed anymore */
 }
 
+/* returns 1 if curlevel is the last level to solve in the set. returns 0 otherwise. */
+static int islevelthelastleft(struct sokgame **gamelist, int curlevel, int levelscount) {
+  int x;
+  if (curlevel < 0) return(0);
+  if (gamelist[curlevel]->solution != NULL) return(0);
+  for (x = 0; x < levelscount; x++) {
+    if ((gamelist[x]->solution == NULL) && (x != curlevel)) return(0);
+  }
+  return(1);
+}
+
+static void dumplevel2clipboard(struct sokgame *game, char *history) {
+  char *txt;
+  long solutionlen = 0, playfieldsize;
+  int x, y;
+  if (game->solution != NULL) solutionlen = strlen(game->solution);
+  playfieldsize = (game->field_width + 1) * game->field_height;
+  txt = malloc(solutionlen + playfieldsize + 4096);
+  if (txt == NULL) return;
+  sprintf(txt, "; Level id: %lX\n\n", game->crc32);
+  for (y = 0; y < game->field_height; y++) {
+    for (x = 0; x < game->field_width; x++) {
+      switch (game->field[x][y] & ~field_floor) {
+        case field_wall:
+          strcat(txt, "#");
+          break;
+        case (field_atom | field_goal):
+          strcat(txt, "*");
+          break;
+        case field_atom:
+          strcat(txt, "$");
+          break;
+        case field_goal:
+          if ((game->positionx == x) && (game->positiony == y)) {
+              strcat(txt, "+");
+            } else {
+              strcat(txt, ".");
+          }
+          break;
+        default:
+          if ((game->positionx == x) && (game->positiony == y)) {
+              strcat(txt, "@");
+            } else {
+              strcat(txt, " ");
+          }
+          break;
+      }
+    }
+    strcat(txt, "\n");
+  }
+  strcat(txt, "\n");
+  if ((history != NULL) && (history[0] != 0)) { /* only allow if there actually is a solution */
+      strcat(txt, "; Solution\n; ");
+      strcat(txt, history);
+      strcat(txt, "\n");
+    } else {
+      strcat(txt, "; No solution available\n");
+  }
+  SDL_SetClipboardText(txt);
+  free(txt);
+}
+
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
   struct sokgamestates *states;
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
-  int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x;
+  int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x, lastlevelleft;
   int tilesize, playsolution, draw_screen_playsol;
   char *levelfile = NULL;
   #define LEVCOMMENTMAXLEN 32
@@ -712,6 +779,9 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
   loadGraphic(&sprites->solved, renderer, img_solved_png, img_solved_png_len);
   loadGraphic(&sprites->nosolution, renderer, img_nosol_png, img_nosol_png_len);
+  loadGraphic(&sprites->congrats, renderer, img_congrats_png, img_congrats_png_len);
+  loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_png, img_copiedtoclipboard_png_len);
+  loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -866,6 +936,7 @@ int main(int argc, char **argv) {
 
   if (curlevel == 0) showhelp = 1;
   playsolution = 0;
+  lastlevelleft = islevelthelastleft(gameslist, curlevel, levelscount);
 
   while (exitflag == 0) {
     if (playsolution > 0) {
@@ -921,14 +992,16 @@ int main(int argc, char **argv) {
             loadlevel(&game, gameslist[curlevel], states);
             break;
           case SDLK_F5: /* save solution to clipboard, if any */
-            if (game.solution != NULL) { /* only allow if there actually is a solution */
-                  SDL_SetClipboardText(game.solution);
-                  fade2black(renderer, window, sprites);
-                  draw_string("Solution copied to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
-                  wait_for_a_key(2, renderer);
-                } else {
-                  exitflag = displaytexture(renderer, sprites->nosolution, window, 1, DISPLAYCENTERED, 255);
-            }
+            dumplevel2clipboard(gameslist[curlevel], gameslist[curlevel]->solution);
+            fade2texture(renderer, window, sprites->black);
+            draw_string("This level has been dumped to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+            wait_for_a_key(2, renderer);
+            break;
+          case SDLK_F9: /* save current state of level to clipboard */
+            dumplevel2clipboard(&game, states->history);
+            fade2texture(renderer, window, sprites->black);
+            draw_string("Current state of this level has been copied to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+            wait_for_a_key(2, renderer);
             break;
           case SDLK_s:
             if (playsolution == 0) {
@@ -1000,19 +1073,30 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 0, states);
           if ((res >= 0) && (res & sokmove_solved)) {
             int alphaval;
-            /* display a congrats message and increment level */
+            SDL_Texture *tmptex;
+            /* display a congrats message */
+            if (lastlevelleft != 0) {
+                tmptex = sprites->congrats;
+              } else {
+                tmptex = sprites->cleared;
+            }
+            flush_events();
             for (alphaval = 0; alphaval < 255; alphaval += 30) {
               draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
-              exitflag = displaytexture(renderer, sprites->cleared, window, 0, DISPLAYCENTERED, alphaval);
+              exitflag = displaytexture(renderer, tmptex, window, 0, DISPLAYCENTERED, alphaval);
               SDL_Delay(25);
               if (exitflag != 0) break;
             }
-            flush_events();
             if (exitflag == 0) {
               draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
-              exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
+              /* if this was the last level left, display a congrats screen */
+              if (lastlevelleft != 0) {
+                  exitflag = displaytexture(renderer, sprites->congrats, window, 10, DISPLAYCENTERED, 255);
+                } else {
+                  exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
+              }
               /* fade out to black */
-              if (exitflag == 0) fade2black(renderer, window, sprites);
+              if (exitflag == 0) fade2texture(renderer, window, sprites->black);
               flush_events();
             }
             /* load the new level and reset states */
@@ -1039,6 +1123,9 @@ int main(int argc, char **argv) {
   if (sprites->nosolution) SDL_DestroyTexture(sprites->nosolution);
   if (sprites->cleared) SDL_DestroyTexture(sprites->cleared);
   if (sprites->help) SDL_DestroyTexture(sprites->help);
+  if (sprites->congrats) SDL_DestroyTexture(sprites->congrats);
+  if (sprites->copiedtoclipboard) SDL_DestroyTexture(sprites->copiedtoclipboard);
+  if (sprites->snapshottoclipboard) SDL_DestroyTexture(sprites->snapshottoclipboard);
   for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
   for (x = 0; x < 128; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);
 

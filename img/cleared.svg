@@ -57,6 +57,14 @@
          stdDeviation="11.504064"
          id="feGaussianBlur3770" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3801">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.62495117"
+         id="feGaussianBlur3803" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -66,7 +74,7 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.23"
-     inkscape:cx="270.02601"
+     inkscape:cx="127.74959"
      inkscape:cy="92.684797"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -118,33 +126,29 @@
        sodipodi:cy="82.520325"
        sodipodi:rx="168.69917"
        sodipodi:ry="61.382114"
-       d="m 39.837387,82.520325 a 168.69917,61.382114 0 1 1 -337.398347,0 168.69917,61.382114 0 1 1 337.398347,0 z"
+       d="m 39.837387,82.520325 c 0,33.900405 -75.529192,61.382115 -168.699177,61.382115 -93.16998,0 -168.69917,-27.48171 -168.69917,-61.382115 0,-33.900406 75.52919,-61.382115 168.69917,-61.382115 93.169985,0 168.699177,27.481709 168.699177,61.382115 z"
        transform="translate(289.43089,871.87438)" />
-    <g
-       id="g3822"
-       transform="translate(-6.3969727e-6,2.170166e-5)">
-      <text
-         sodipodi:linespacing="125%"
-         id="text3013-3"
-         y="966.30615"
-         x="54.212234"
-         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.67961162;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
-         xml:space="preserve"><tspan
-           y="966.30615"
-           x="54.212234"
-           id="tspan3015-8"
-           sodipodi:role="line">Good job!</tspan></text>
-      <text
-         sodipodi:linespacing="125%"
-         id="text3013"
-         y="964.24103"
-         x="51.984589"
-         style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ff8900;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
-         xml:space="preserve"><tspan
-           y="964.24103"
-           x="51.984589"
-           id="tspan3015"
-           sodipodi:role="line">Good job!</tspan></text>
-    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.67961161999999997;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold;filter:url(#filter3801)"
+       x="54.212227"
+       y="966.30615"
+       id="text3013-3"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3015-8"
+         x="54.212227"
+         y="966.30615">Good job!</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ff8900;fill-opacity:1;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
+       x="51.984581"
+       y="964.24103"
+       id="text3013"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3015"
+         x="51.984581"
+         y="964.24103">Good job!</tspan></text>
   </g>
 </svg>

@@ -14,7 +14,7 @@ Simple Sokoban is a (simple) Sokoban game aimed at playability and portability a
   - 3 embedded level sets,
   - support for external *.xsb levels,
   - support for levels of size up to 62x62,
-  - saving solutions to clipboard,
+  - saving levels to clipboard,
   - ...
 
 I provide a build of the game for a couple of Linux distributions via the openSUSE build service:
