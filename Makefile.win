@@ -2,7 +2,7 @@
 CFLAGS = -O3 -Wall -Wextra -std=gnu89 -pedantic
 CLIBS = -lmingw32 -Dmain=SDL_main -lSDL2main -lSDL2 -lSDL2_image -mwindows -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc
 
-all: sok.exe
+all: simplesok.exe
 
 simplesok.exe: sok.o sok_core.o crc32.o save.o simplesok.res
 	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o simplesok.res -o simplesok.exe $(CLIBS)
