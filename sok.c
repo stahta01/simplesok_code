@@ -129,9 +129,11 @@ static int getoffsetv(struct sokgame *game, int winh, int tilesize) {
   return(0);
 }
 
-static void flush_events() {
+static int flush_events() {
   SDL_Event event;
-  while (SDL_PollEvent(&event) != 0);
+  int exitflag = 0;
+  while (SDL_PollEvent(&event) != 0) if (event.type == SDL_QUIT) exitflag = 1;
+  return(exitflag);
 }
 
 /* wait for a key up to timeout seconds (-1 = indefintely), while redrawing the renderer screen, if not null */
@@ -919,7 +921,7 @@ int main(int argc, char **argv) {
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
   LevelSelectMenu:
-  flush_events();
+  exitflag = flush_events();
 
   if (exitflag == 0) {
     curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
@@ -1096,8 +1098,10 @@ int main(int argc, char **argv) {
                   exitflag = displaytexture(renderer, sprites->cleared, window, 3, DISPLAYCENTERED, 255);
               }
               /* fade out to black */
-              if (exitflag == 0) fade2texture(renderer, window, sprites->black);
-              flush_events();
+              if (exitflag == 0) {
+                fade2texture(renderer, window, sprites->black);
+                exitflag = flush_events();
+              }
             }
             /* load the new level and reset states */
             goto LevelSelectMenu;
