@@ -2,7 +2,7 @@
  * This file is part of the 'Simple Sokoban' project.
  *
  * Copyright (C) Mateusz Viste 2014
- * 
+ *
  * ----------------------------------------------------------------------
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,11 +21,9 @@
 
 #include <errno.h>
 #include <stdio.h>    /* fopen() */
-#include <stdlib.h>   /* getenv(), malloc(), realloc() */
+#include <stdlib.h>   /* malloc(), realloc() */
 #include <string.h>   /* strcpy(), strcat() */
-#include <sys/stat.h> /* mkdir() */
-
-#define sokappname "simplesokoban"
+#include <SDL2/SDL.h> /* SDL_GetPrefPath(), SDL_free() */
 
 enum solmoves {
   solmove_u = 0,
@@ -86,59 +84,17 @@ static char byte2xsb(int b) {
 }
 
 
-#if defined(WIN32) || defined(_WIN32)
-
-static void getsavedir_backend(char *savedir, int maxlen) {
-  char *appdata;
-  appdata = getenv("APPDATA");
-  if (appdata == NULL) {
-    savedir[0] = 0;
-    return;
-  }
-  /* Do not try to create the AppData folder, should exist already */
-  strncpy(savedir, appdata, maxlen);
-  strcat(savedir, "\\");
-  strcat(savedir, sokappname);
-  /* Create the AppData\appname folder (this will fail if exists already, but I don't care) */
-  _mkdir(savedir);
-  strcat(savedir, "\\");
-}
-
-#else
-
-static void getsavedir_backend(char *savedir, int maxlen) {
-  char *home;
-  home = getenv("XDG_CONFIG_HOME");
-  if ((home != NULL) && (home[0] != 0)) { /* must be set and not empty, otherwise for $HOME */
-      strncpy(savedir, home, maxlen);
-      mkdir(savedir, 0755); /* create the folder */
-      strcat(savedir, "/" sokappname);
-      mkdir(savedir, 0755); /* create the folder */
-      strcat(savedir, "/");
-    } else {
-      home = getenv("HOME");
-      if ((home != NULL) && (home[0] != 0)) {
-          strcpy(savedir, home);
-          mkdir(savedir, 0755); /* create the folder */
-          strcat(savedir, "/.config");
-          mkdir(savedir, 0755); /* create the folder */
-          strcat(savedir, "/" sokappname);
-          mkdir(savedir, 0755); /* create the folder */
-          strcat(savedir, "/");
-        } else {  /* failed to find a proper directory */
-          savedir[0] = 0;
-      }
-  }
-}
-
-#endif
-
 /* fills *savedir with the directory path where simplesok is supposed to keep its save files */
 static void getsavedir(char *savedir, int maxlen) {
+  char *prefpath;
   if (maxlen > 0) savedir[0] = 0;
-  maxlen -= (strlen(sokappname) + 16); /* to be sure we will always have enough room for the app's suffix and extra NULL terminator */
+  maxlen -= 16; /* to be sure we will always have enough room for the app's suffix and extra NULL terminator */
   if (maxlen < 1) return;
-  getsavedir_backend(savedir, maxlen);
+  prefpath = SDL_GetPrefPath("Mateusz Viste", "Simple Sokoban");
+  if (prefpath == NULL) return;
+  if (strlen(prefpath) > (unsigned) maxlen) return;
+  strcpy(savedir, prefpath);
+  SDL_free(prefpath);
 }
 
 /* returns a malloc()'ed, null-terminated string with the solution to level levcrc32. if no solution available, returns NULL. */
