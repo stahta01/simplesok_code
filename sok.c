@@ -43,6 +43,8 @@
 #define DRAWSCREEN_REFRESH 1
 #define DRAWSCREEN_PLAYBACK 2
 #define DRAWSCREEN_PUSH 4
+#define DRAWSCREEN_NOBG 8
+#define DRAWSCREEN_NOTXT 16
 
 #define DRAWSTRING_CENTER -1
 #define DRAWSTRING_RIGHT -2
@@ -301,7 +303,11 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   int scrollingadjx = 0, scrollingadjy = 0; /* this is used when scrolling + movement of player is needed */
   int drawtile_flags = 0;
   SDL_GetWindowSize(window, &winw, &winh);
-  SDL_RenderCopy(renderer, sprites->bg, NULL, NULL);
+  if (flags & DRAWSCREEN_NOBG) {
+      SDL_RenderCopy(renderer, sprites->black, NULL, NULL);
+    } else {
+      SDL_RenderCopy(renderer, sprites->bg, NULL, NULL);
+  }
 
   if (flags & DRAWSCREEN_PUSH) drawtile_flags = DRAWPLAYFIELDTILE_PUSH;
 
@@ -361,16 +367,18 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
       draw_player(game, states, sprites, renderer, winw, winh, tilesize, moveoffsetx, moveoffsety);
   }
   /* draw text */
-  sprintf(stringbuff, "%s, level %d", levelname, game->level);
-  draw_string(stringbuff, sprites, renderer, 10, DRAWSTRING_BOTTOM, window);
-  if (game->solution != NULL) {
-      sprintf(stringbuff, "best score: %ld/%ld", sok_history_getlen(game->solution), sok_history_getpushes(game->solution));
-    } else {
-      sprintf(stringbuff, "best score: -");
+  if ((flags & DRAWSCREEN_NOTXT) == 0) {
+    sprintf(stringbuff, "%s, level %d", levelname, game->level);
+    draw_string(stringbuff, sprites, renderer, 10, DRAWSTRING_BOTTOM, window);
+    if (game->solution != NULL) {
+        sprintf(stringbuff, "best score: %ld/%ld", sok_history_getlen(game->solution), sok_history_getpushes(game->solution));
+      } else {
+        sprintf(stringbuff, "best score: -");
+    }
+    draw_string(stringbuff, sprites, renderer, DRAWSTRING_RIGHT, 0, window);
+    sprintf(stringbuff, "moves: %ld / pushes: %ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
+    draw_string(stringbuff, sprites, renderer, 10, 0, window);
   }
-  draw_string(stringbuff, sprites, renderer, DRAWSTRING_RIGHT, 0, window);
-  sprintf(stringbuff, "moves: %ld / pushes: %ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
-  draw_string(stringbuff, sprites, renderer, 10, 0, window);
   if ((flags & DRAWSCREEN_PLAYBACK) && (time(NULL) % 2 == 0)) draw_string("*** PLAYBACK ***", sprites, renderer, DRAWSTRING_CENTER, 32, window);
   /* Update the screen */
   if (flags & DRAWSCREEN_REFRESH) SDL_RenderPresent(renderer);
@@ -736,7 +744,7 @@ int main(int argc, char **argv) {
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
   int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x, lastlevelleft;
-  int tilesize, playsolution, draw_screen_playsol;
+  int tilesize, playsolution, drawscreenflags;
   char *levelfile = NULL;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
@@ -938,18 +946,19 @@ int main(int argc, char **argv) {
 
   if (curlevel == 0) showhelp = 1;
   playsolution = 0;
+  drawscreenflags = 0;
   lastlevelleft = islevelthelastleft(gameslist, curlevel, levelscount);
 
   while (exitflag == 0) {
     if (playsolution > 0) {
-        draw_screen_playsol = DRAWSCREEN_PLAYBACK;
+        drawscreenflags |= DRAWSCREEN_PLAYBACK;
       } else {
-        draw_screen_playsol = 0;
+        drawscreenflags &= ~DRAWSCREEN_PLAYBACK;
     }
-    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | draw_screen_playsol, levcomment);
+    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
     if (showhelp != 0) {
       exitflag = displaytexture(renderer, sprites->help, window, -1, DISPLAYCENTERED, 255);
-      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH, levcomment);
+      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
       showhelp = 0;
     }
     if (debugmode != 0) printf("history: %s\n", states->history);
@@ -1018,6 +1027,18 @@ int main(int argc, char **argv) {
           case SDLK_F1:
             if (playsolution == 0) showhelp = 1;
             break;
+          case SDLK_F2:
+            if ((drawscreenflags & DRAWSCREEN_NOBG) && (drawscreenflags & DRAWSCREEN_NOTXT)) {
+                drawscreenflags &= ~(DRAWSCREEN_NOBG | DRAWSCREEN_NOTXT);
+              } else if (drawscreenflags & DRAWSCREEN_NOBG) {
+                drawscreenflags |= DRAWSCREEN_NOTXT;
+              } else if (drawscreenflags & DRAWSCREEN_NOTXT) {
+                drawscreenflags &= ~DRAWSCREEN_NOTXT;
+                drawscreenflags |= DRAWSCREEN_NOBG;
+              } else {
+                drawscreenflags |= DRAWSCREEN_NOTXT;
+            }
+            break;
           case SDLK_ESCAPE:
             goto LevelSelectMenu;
             break;
@@ -1046,11 +1067,11 @@ int main(int argc, char **argv) {
           if (game.solution[playsolution - 1] == 0) playsolution = 0;
         }
         if (movedir != 0) {
-          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, draw_screen_playsol);
+          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, drawscreenflags);
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
-            int offset, offsetx = 0, offsety = 0, scrolling, drawscreenflags = 0;
-            if (res & sokmove_pushed) drawscreenflags = DRAWSCREEN_PUSH;
+            int offset, offsetx = 0, offsety = 0, scrolling;
+            if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
             if (movedir == sokmoveUP) offsety = -1;
             if (movedir == sokmoveRIGHT) offsetx = 1;
@@ -1061,14 +1082,14 @@ int main(int argc, char **argv) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol | drawscreenflags, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % (tilesize / 8) == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | draw_screen_playsol | drawscreenflags, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
           }
@@ -1107,6 +1128,7 @@ int main(int argc, char **argv) {
             goto LevelSelectMenu;
           }
         }
+        drawscreenflags &= ~DRAWSCREEN_PUSH;
     }
 
     if (exitflag != 0) break;
