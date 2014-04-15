@@ -9,8 +9,8 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="481.08783"
-   height="327.42914"
+   width="488"
+   height="334"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
@@ -22,16 +22,16 @@
      id="defs4">
     <filter
        inkscape:collect="always"
-       id="filter3772"
-       x="-0.095948808"
-       width="1.1918976"
-       y="-0.16014241"
-       height="1.3202848"
+       id="filter3788"
+       x="-0.097365253"
+       width="1.1947305"
+       y="-0.15634622"
+       height="1.3126924"
        color-interpolation-filters="sRGB">
       <feGaussianBlur
          inkscape:collect="always"
-         stdDeviation="15.2439"
-         id="feGaussianBlur3774" />
+         stdDeviation="16.524388"
+         id="feGaussianBlur3790" />
     </filter>
   </defs>
   <sodipodi:namedview
@@ -42,8 +42,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.23"
-     inkscape:cx="177.63982"
-     inkscape:cy="157.95783"
+     inkscape:cx="180.71299"
+     inkscape:cy="161.03101"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -73,16 +73,15 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(31.194316,-748.81014)">
+     transform="translate(34.267485,-745.31244)">
     <rect
-       style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3772)"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3788)"
        id="rect3017"
        width="407.31711"
        height="253.65842"
-       x="5.6910439"
-       y="785.6955"
-       ry="16.93796"
-       transform="translate(8.6401366e-7,5.1123047e-6)" />
+       x="6.0739608"
+       y="785.48322"
+       ry="16.93796" />
     <text
        xml:space="preserve"
        style="font-size:13px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -109,11 +108,11 @@
        xml:space="preserve"
        id="flowRoot2999"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:DOSEGA;-inkscape-font-specification:DOSEGA Medium"
-       transform="translate(460.38036,849.90128)"><flowRegion
+       transform="translate(482.31015,842.83517)"><flowRegion
          id="flowRegion3001"><rect
            id="rect3003"
-           width="333.33331"
-           height="195.93494"
+           width="290.2439"
+           height="210.56908"
            x="-417.88617"
            y="-34.959351" /></flowRegion><flowPara
          id="flowPara3005"
@@ -133,5 +132,7 @@
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3002">F5 - dump the level to clipboard (with solution)</flowPara><flowPara
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3003">F9 - write current state of the level to clipboard</flowPara></flowRoot>  </g>
+         id="flowPara3003">F9 - write current state of the level to clipboard</flowPara><flowPara
+         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
+         id="flowPara3006">F11 - fullscreen on/off</flowPara></flowRoot>  </g>
 </svg>

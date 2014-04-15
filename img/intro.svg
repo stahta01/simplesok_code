@@ -52,6 +52,14 @@
          stdDeviation="12.447826"
          id="feGaussianBlur3829" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3801">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.2676199"
+         id="feGaussianBlur3803" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -62,7 +70,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.5157166"
      inkscape:cx="334.10062"
-     inkscape:cy="309.55246"
+     inkscape:cy="415.11309"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -108,7 +116,7 @@
     <g
        id="g3056-6"
        transform="translate(37.836839,30.981656)"
-       style="fill:#999999;stroke:none">
+       style="fill:#999999;stroke:none;filter:url(#filter3801)">
       <text
          transform="translate(0,452.36218)"
          sodipodi:linespacing="125%"

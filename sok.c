@@ -82,6 +82,16 @@ static int absval(int i) {
   return(i);
 }
 
+static void switchfullscreen(SDL_Window *window) {
+  static int fullscreenflag = 0;
+  fullscreenflag ^= 1;
+  if (fullscreenflag != 0) {
+      SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    } else {
+      SDL_SetWindowFullscreen(window, 0);
+  }
+}
+
 static int char2fontid(char c) {
   if ((c >= '0') && (c <= '9')) return(c - '0');
   if ((c >= 'a') && (c <= 'z')) return(10 + c - 'a');
@@ -510,6 +520,9 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
           case SDLK_KP_ENTER:
             return(memptr[selection]);
             break;
+          case SDLK_F11:
+            switchfullscreen(window);
+            break;
           case SDLK_ESCAPE:
             return(NULL);
             break;
@@ -644,6 +657,9 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
             return(selection);
+            break;
+          case SDLK_F11:
+            switchfullscreen(window);
             break;
           case SDLK_ESCAPE:
             return(SELECTLEVEL_BACK);
@@ -929,7 +945,7 @@ int main(int argc, char **argv) {
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
   LevelSelectMenu:
-  exitflag = flush_events();
+  if (exitflag == 0) exitflag = flush_events();
 
   if (exitflag == 0) {
     curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
@@ -1038,6 +1054,9 @@ int main(int argc, char **argv) {
               } else {
                 drawscreenflags |= DRAWSCREEN_NOTXT;
             }
+            break;
+          case SDLK_F11:
+            switchfullscreen(window);
             break;
           case SDLK_ESCAPE:
             goto LevelSelectMenu;
