@@ -4,8 +4,8 @@ CLIBS = -lmingw32 -Dmain=SDL_main -lSDL2main -lSDL2 -lSDL2_image -mwindows -Wl,-
 
 all: sok.exe
 
-sok.exe: sok.o sok_core.o crc32.o save.o simplesok.res
-	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o simplesok.res -o sok.exe $(CLIBS)
+simplesok.exe: sok.o sok_core.o crc32.o save.o simplesok.res
+	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o simplesok.res -o simplesok.exe $(CLIBS)
 
 simplesok.res: simplesok.rc
 	windres -i simplesok.rc --output-format coff -o simplesok.res
