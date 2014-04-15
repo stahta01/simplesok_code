@@ -944,7 +944,7 @@ int main(int argc, char **argv) {
   }
   if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
 
-  if (curlevel == 0) showhelp = 1;
+  if ((curlevel == 0) && (game.solution == NULL)) showhelp = 1;
   playsolution = 0;
   drawscreenflags = 0;
   lastlevelleft = islevelthelastleft(gameslist, curlevel, levelscount);
