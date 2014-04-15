@@ -17,23 +17,23 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>    /* malloc() */
-#include <string.h>    /* memcpy() */
+#include <stdlib.h>             /* malloc() */
+#include <string.h>             /* memcpy() */
 #include <time.h>
-#include <SDL2/SDL.h>                 /* SDL       */
-#include <SDL2/SDL_image.h>           /* SDL_image */
+#include <SDL2/SDL.h>           /* SDL       */
+#include <SDL2/SDL_image.h>     /* SDL_image */
 #include "sok_core.h"
-#include "data_lev.h"                 /* embedded image files */
-#include "data_img.h"                 /* embedded level files */
-#include "data_fnt.h"                 /* embedded font files */
-#include "data_skn.h"                 /* embedded skin files */
-#include "data_ico.h"                 /* embedded the icon file */
+#include "data_lev.h"           /* embedded image files */
+#include "data_img.h"           /* embedded level files */
+#include "data_fnt.h"           /* embedded font files */
+#include "data_skn.h"           /* embedded skin files */
+#include "data_ico.h"           /* embedded the icon file */
 
 #define PVER "v1.0"
 
 #define debugmode 0
 
-#define MAXLEVELS 1024
+#define MAXLEVELS 4096
 #define SCREEN_DEFAULT_WIDTH 800
 #define SCREEN_DEFAULT_HEIGHT 600
 
