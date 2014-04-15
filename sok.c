@@ -1018,17 +1018,13 @@ int main(int argc, char **argv) {
             playsolution = 0;
             loadlevel(&game, gameslist[curlevel], states);
             break;
-          case SDLK_F5: /* save solution to clipboard, if any */
+          case SDLK_F5: /* dump level & solution (if any) to clipboard */
             dumplevel2clipboard(gameslist[curlevel], gameslist[curlevel]->solution);
-            fade2texture(renderer, window, sprites->black);
-            draw_string("This level has been dumped to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
-            wait_for_a_key(2, renderer);
+            exitflag = displaytexture(renderer, sprites->copiedtoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
           case SDLK_F9: /* save current state of level to clipboard */
             dumplevel2clipboard(&game, states->history);
-            fade2texture(renderer, window, sprites->black);
-            draw_string("Current state of this level has been copied to clipboard.", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
-            wait_for_a_key(2, renderer);
+            exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
           case SDLK_s:
             if (playsolution == 0) {
