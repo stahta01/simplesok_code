@@ -27,10 +27,10 @@ URL: http://simplesok.sourceforge.net/
 Source0: %{name}-%{version}.tar.gz
 
 %if 0%{?fedora}
-BuildRequires: SDL2-devel
+BuildRequires: SDL2-devel >= 2.0.1
 BuildRequires: SDL2_image-devel
 %else
-BuildRequires: libSDL2-devel
+BuildRequires: libSDL2-devel >= 2.0.1
 BuildRequires: libSDL2_image-devel
 %endif
 
