@@ -68,9 +68,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.5157166"
-     inkscape:cx="334.10062"
-     inkscape:cy="415.11309"
+     inkscape:zoom="1.74"
+     inkscape:cx="366.35707"
+     inkscape:cy="302.49377"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -195,65 +195,53 @@
        transform="translate(346.95652,354.97088)" />
     <g
        id="g3862"
-       transform="matrix(0.63154017,0,0,0.63154017,151.49037,176.68873)"
+       transform="matrix(0.63154017,0,0,0.63154017,151.49037,180.68873)"
        style="opacity:0.85950413">
       <text
          sodipodi:linespacing="125%"
          id="text3012"
          y="869.93719"
          x="245.0993"
-         style="font-size:22px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373000000004;stroke:none;font-family:Sans;-inkscape-font-specification:'micro.pcf Bold'"
+         style="font-size:22px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans;-inkscape-font-specification:'micro.pcf Bold'"
          xml:space="preserve"><tspan
-           style="font-size:16px;fill:#000000;fill-opacity:0.78431373000000004"
+           style="font-size:16px;fill:#000000;fill-opacity:0.78431373"
            y="869.93719"
            x="245.0993"
            id="tspan3014"
            sodipodi:role="line"><tspan
    id="tspan3024"
-   style="font-size:16px;font-weight:normal;fill:#000000;fill-opacity:0.78431373000000004;-inkscape-font-specification:Sans">Original idea:</tspan> Hiroyuki Imabayashi</tspan></text>
+   style="font-size:16px;font-weight:normal;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans">Original idea:</tspan> Hiroyuki Imabayashi</tspan></text>
       <text
          sodipodi:linespacing="125%"
          id="text3028"
          y="896.85516"
          x="284.73917"
-         style="font-size:19px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373000000004;stroke:none;font-family:Sans"
+         style="font-size:19px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
-           style="font-size:16px;fill:#000000;fill-opacity:0.78431373000000004"
+           style="font-size:16px;fill:#000000;fill-opacity:0.78431373"
            y="896.85516"
            x="284.73917"
            id="tspan3030"
            sodipodi:role="line">Graphic:<tspan
    id="tspan3042"
-   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373000000004;-inkscape-font-specification:Sans Bold"> Gerry Wiseman </tspan></tspan></text>
+   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans Bold"> Gerry Wiseman </tspan></tspan></text>
       <text
          sodipodi:linespacing="125%"
          id="text3032"
          y="922.36584"
-         x="501.00696"
-         style="font-size:16px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:0.78431373000000004;stroke:none;font-family:Sans"
+         x="512.38159"
+         style="font-size:16px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans"
          xml:space="preserve"><tspan
            y="922.36584"
-           x="506.56946"
+           x="517.94409"
            id="tspan3034"
            sodipodi:role="line">Level design:<tspan
    id="tspan3044"
-   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373000000004;-inkscape-font-specification:Sans Bold"> Thinking Rabbit </tspan></tspan><tspan
+   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans Bold"> David W. Skinner </tspan></tspan><tspan
            id="tspan3036"
            y="942.36584"
-           x="501.00696"
+           x="512.38159"
            sodipodi:role="line" /></text>
-      <text
-         sodipodi:linespacing="125%"
-         id="text3038"
-         y="944.41693"
-         x="357.89014"
-         style="font-size:16px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373000000004;stroke:none;font-family:Sans"
-         xml:space="preserve"><tspan
-           style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373000000004;-inkscape-font-specification:Sans Bold"
-           y="944.41693"
-           x="357.89014"
-           id="tspan3040"
-           sodipodi:role="line">David W. Skinner</tspan></text>
     </g>
     <g
        id="g3795">
@@ -314,12 +302,12 @@
        xml:space="preserve"
        style="font-size:14.69229317px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.6553398;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
        x="370.29977"
-       y="709.96387"
+       y="711.96387"
        id="text3846"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3848"
          x="370.29977"
-         y="709.96387">Credits</tspan></text>
+         y="711.96387">Credits</tspan></text>
   </g>
 </svg>

@@ -480,7 +480,7 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
 static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize, char **levelfile) {
   int exitflag, winw, winh;
   static int selection = 0;
-  unsigned char *memptr[3] = {levels_microban_xsb, levels_original_xsb, levels_sasquatch_xsb};
+  unsigned char *memptr[3] = {levels_microban_xsb, levels_sasquatch_xsb, levels_sasquatch3_xsb};
   int textvadj = 12;
   SDL_Event event;
   SDL_Rect rect;
@@ -494,9 +494,9 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     rect.w = tilesize;
     rect.h = tilesize;
     SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
-    draw_string("Easy (aka Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0, window);
-    draw_string("Original & Extra", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1, window);
-    draw_string("Hard (aka Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2, window);
+    draw_string("Easy (Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0, window);
+    draw_string("Normal (Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1, window);
+    draw_string("Hard (Sasquatch III)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2, window);
     SDL_RenderPresent(renderer);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
