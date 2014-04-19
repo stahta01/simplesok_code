@@ -182,7 +182,7 @@ static int displaytexture(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Wind
   }
   SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
   SDL_SetTextureAlphaMod(texture, alpha);
-  SDL_RenderCopy(renderer, texture, NULL, rectptr);
+  if (SDL_RenderCopy(renderer, texture, NULL, rectptr) != 0) printf("SDL_RenderCopy() failed: %s\n", SDL_GetError());
   if ((flags & NOREFRESH) == 0) SDL_RenderPresent(renderer);
   if (timeout != 0) return(wait_for_a_key(timeout, renderer));
   return(0);
@@ -302,6 +302,7 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   if (surface == NULL) return(-1);
   res = surface->w;
   *texture = SDL_CreateTextureFromSurface(renderer, surface);
+  if (*texture == NULL) printf("SDL_CreateTextureFromSurface() failed: %s\n", SDL_GetError());
   SDL_FreeSurface(surface);
   return(res);
 }
@@ -773,12 +774,12 @@ int main(int argc, char **argv) {
   srand(time(NULL));
 
   /* Init SDL and set the video mode */
-  SDL_Init(SDL_INIT_VIDEO);
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) printf("SDL_Init() failed: %s\n", SDL_GetError());
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");  /* this makes scaling nicer (use linear scaling instead of raw pixels) */
 
   window = SDL_CreateWindow("Simple Sokoban " PVER, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_DEFAULT_WIDTH, SCREEN_DEFAULT_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (window == NULL) {
-    printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+    printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     return(1);
   }
 
@@ -788,7 +789,7 @@ int main(int argc, char **argv) {
   renderer = SDL_CreateRenderer(window, -1, 0);
   if (renderer == NULL) {
     SDL_DestroyWindow(window);
-    printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+    printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
     return(1);
   }
 
