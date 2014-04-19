@@ -50,6 +50,8 @@
 #define DRAWSTRING_RIGHT -2
 #define DRAWSTRING_BOTTOM -3
 
+#define BLIT_LEVELMAP_BACKGROUND 1
+
 #define FONT_SPACE_WIDTH 12
 #define FONT_KERNING -3
 
@@ -563,11 +565,22 @@ static void RenderCopyWithAlpha(SDL_Renderer *renderer, SDL_Texture *texture, SD
 }
 
 /* blit a level preview */
-static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int tilesize, int alpha) {
-  int x, y;
-  SDL_Rect rect;
+static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int tilesize, int alpha, int flags) {
+  int x, y, bgpadding = tilesize * 3;
+  SDL_Rect rect, bgrect;
   rect.w = tilesize;
   rect.h = tilesize;
+  /* if background enabled, compute coordinates of the background and draw it */
+  if (flags & BLIT_LEVELMAP_BACKGROUND) {
+    bgrect.x = xpos - (game->field_width * tilesize + bgpadding) / 2;
+    bgrect.y = ypos - (game->field_height * tilesize + bgpadding) / 2;
+    bgrect.w = game->field_width * tilesize + bgpadding;
+    bgrect.h = game->field_height * tilesize + bgpadding;
+    SDL_RenderFillRect(renderer, &bgrect);
+    SDL_SetRenderDrawColor(renderer, 0x90, 0x90, 0x00, 255);
+    SDL_RenderDrawRect(renderer, &bgrect);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  }
   for (y = 0; y < game->field_height; y++) {
     for (x = 0; x < game->field_width; x++) {
       /* compute coordinates of the tile on screen */
@@ -620,7 +633,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* draw the screen */
     SDL_RenderClear(renderer);
     if (selection > 0) { /* draw the level before */
-      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 80);
+      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 80, 0);
       if (gameslist[selection - 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -630,7 +643,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
       }
     }
     if (selection + 1 < maxallowedlevel) { /* draw the level after */
-      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 80);
+      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 80, 0);
       if (gameslist[selection + 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -639,7 +652,8 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
         SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
       }
     }
-    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 196);
+    /* draw the selected level */
+    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 196, BLIT_LEVELMAP_BACKGROUND);
     if (gameslist[selection]->solution != NULL) {
       SDL_Rect rect;
       SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
