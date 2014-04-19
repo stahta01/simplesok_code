@@ -480,24 +480,41 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
 static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize, char **levelfile) {
   int exitflag, winw, winh;
   static int selection = 0;
+  int oldpusherposy = -1, newpusherposy, x;
   unsigned char *memptr[3] = {levels_microban_xsb, levels_sasquatch_xsb, levels_sasquatch3_xsb};
+  char *levname[3] = {"Easy (Microban)", "Normal (Sasquatch)", "Hard (Sasquatch III)"};
   int textvadj = 12;
   SDL_Event event;
   SDL_Rect rect;
 
   for (;;) {
     SDL_GetWindowSize(window, &winw, &winh);
-    displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
-    /* compute the dst rect */
+    /* compute the dst rect of the pusher */
     rect.x = winw * 0.23;
-    rect.y = winh * 0.63 + winh * 0.08 * selection;
+    newpusherposy = winh * 0.63 + winh * 0.08 * selection;
     rect.w = tilesize;
     rect.h = tilesize;
-    SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
-    draw_string("Easy (Microban)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 0, window);
-    draw_string("Normal (Sasquatch)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 1, window);
-    draw_string("Hard (Sasquatch III)", sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * 2, window);
-    SDL_RenderPresent(renderer);
+    if (oldpusherposy < 0) oldpusherposy = newpusherposy;
+    /* draw the screen */
+    rect.y = oldpusherposy;
+    for (;;) {
+      displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
+      SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
+      for (x = 0; x < 3; x++) {
+        draw_string(levname[x], sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * x, window);
+      }
+      SDL_RenderPresent(renderer);
+      if (rect.y == newpusherposy) break;
+      if (newpusherposy < oldpusherposy) {
+          rect.y -= 5;
+          if (rect.y < newpusherposy) rect.y = newpusherposy;
+        } else {
+          rect.y += 5;
+          if (rect.y > newpusherposy) rect.y = newpusherposy;
+      }
+      SDL_Delay(10);
+    }
+    oldpusherposy = newpusherposy;
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) if ((SDL_WaitEvent(&event) != 0) && (event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
