@@ -808,6 +808,9 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->congrats, renderer, img_congrats_png, img_congrats_png_len);
   loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_png, img_copiedtoclipboard_png_len);
   loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
+
+  /* load walls */
+  for (x = 0; x < 16; x++) sprites->walls[x] = NULL;
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -963,7 +966,7 @@ int main(int argc, char **argv) {
   if ((curlevel == 0) && (game.solution == NULL)) showhelp = 1;
   playsolution = 0;
   drawscreenflags = 0;
-  lastlevelleft = islevelthelastleft(gameslist, curlevel, levelscount);
+  if (exitflag == 0) lastlevelleft = islevelthelastleft(gameslist, curlevel, levelscount);
 
   while (exitflag == 0) {
     if (playsolution > 0) {
