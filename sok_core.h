@@ -87,4 +87,7 @@
   /* reloads solutions for all levels in a list */
   void sok_loadsolutions(struct sokgame **gamelist, int levelscount);
 
+  /* returns a human string for error code */
+  char *sok_strerr(int errid);
+
 #endif

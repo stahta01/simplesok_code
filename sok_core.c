@@ -27,6 +27,33 @@
 #include "save.h"
 #include "sok_core.h"
 
+enum errorslist {
+  ERR_UNDEFINED = -1,
+  ERR_LEVEL_TOO_HIGH = -2,
+  ERR_LEVEL_TOO_LARGE = -3,
+  ERR_LEVEL_TOO_SMALL = -4,
+  ERR_MEM_ALLOC_FAILED = -5,
+  ERR_NO_LEVEL_DATA_FOUND = -6,
+  ERR_TOO_MANY_LEVELS_IN_SET = -7,
+  ERR_UNABLE_TO_OPEN_FILE = -8,
+  ERR_PLAYER_POS_UNDEFINED = -9
+};
+
+char *sok_strerr(enum errorslist errid) {
+  switch (errid) {
+    case ERR_LEVEL_TOO_HIGH: return("Level height too high");
+    case ERR_LEVEL_TOO_LARGE: return("Level width too large");
+    case ERR_LEVEL_TOO_SMALL: return("Level dimentions too small");
+    case ERR_MEM_ALLOC_FAILED: return("Memory allocation failed - out of memory?");
+    case ERR_NO_LEVEL_DATA_FOUND: return("No level data found in file");
+    case ERR_TOO_MANY_LEVELS_IN_SET: return("Too many levels in set");
+    case ERR_UNABLE_TO_OPEN_FILE: return("Failed to open file");
+    case ERR_UNDEFINED: return("Undefined error");
+    case ERR_PLAYER_POS_UNDEFINED: return("Player position not defined");
+  }
+  return("Unknown error");
+}
+
 static void trim(char *comment) {
   int x, firstrealchar = -1, lastrealchar = 0;
   if (comment == NULL) return;
@@ -185,7 +212,7 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
           game->positionx = x;
           game->positiony = y;
         case '.': /* goal */
-        game->field[x + 1][y + 1] |= field_goal;
+          game->field[x + 1][y + 1] |= field_goal;
           x += 1;
           break;
         case '\n': /* next row */
@@ -193,11 +220,14 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
           if (leveldatastarted != 0) y += 1;
           x = 0;
           break;
+        case '\r': /* CR - ignore those */
+          break;
         default: /* anything else is a comment -> skip until end of line or end of file */
           if (leveldatastarted != 0) leveldatastarted = -1;
           if ((commentfound == 0) && (comment != NULL)) commentfound = -1;
           for (;;) {
             bytebuff = readbytefromfileormem(fd, memptr);
+            if (bytebuff == '\r') continue;
             if (bytebuff == '\n') break;
             if (bytebuff < 0) {
               endoffile = 1;
@@ -222,8 +252,8 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
       }
       if ((leveldatastarted < 0) || (endoffile != 0)) break;
       if (x > 0) leveldatastarted = 1;
-      if (x >= 62) return(-1);
-      if (y >= 62) return(-1);
+      if (x >= 62) return(ERR_LEVEL_TOO_LARGE);
+      if (y >= 62) return(ERR_LEVEL_TOO_HIGH);
       if (x > game->field_width) game->field_width = x;
       if ((y >= game->field_height) && (x > 0)) game->field_height = y + 1;
     }
@@ -231,10 +261,10 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
   }
 
   /* check if the loaded game looks sane */
-  if (game->positionx < 0) return(-1);
-  if (game->field_height < 1) return(-1);
-  if (game->field_width < 1) return(-1);
-  if (leveldatastarted == 0) return(-1);
+  if (game->positionx < 0) return(ERR_PLAYER_POS_UNDEFINED);
+  if (game->field_height < 1) return(ERR_LEVEL_TOO_SMALL);
+  if (game->field_width < 1) return(ERR_LEVEL_TOO_SMALL);
+  if (leveldatastarted == 0) return(ERR_NO_LEVEL_DATA_FOUND);
 
   /* remove floors around the level */
   floodFillField(game, 63, 63);
@@ -264,20 +294,20 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
   int level, loadres, errflag = 0;
   if (gamelevel != NULL) {
     fd = fopen(gamelevel, "r");
-    if (fd == NULL) return(-1);
+    if (fd == NULL) return(ERR_UNABLE_TO_OPEN_FILE);
   }
 
   for (level = 0;; level++) { /* iterate to load games sequentially from the file */
     /* puts("loading level.."); */
     if (level + 1 >= maxlevels) {
       level--;
-      errflag = 1;
+      errflag = ERR_TOO_MANY_LEVELS_IN_SET;
       break;
     }
     gamelist[level] = sok_allocgame();
     if (gamelist[level] == NULL) {
       level--;
-      errflag = 1;
+      errflag = ERR_MEM_ALLOC_FAILED;
       break;
     }
 
@@ -285,7 +315,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     loadres = loadlevelfromfile(gamelist[level], fd, &memptr, (level == 0) ? comment : NULL, maxcommentlen);
 
     if (loadres < 0) { /* error loading level data */
-      if (level == 0) errflag = 1;
+      if (level == 0) errflag = loadres;
       sok_freegame(gamelist[level]);
       level--;
       break;
@@ -302,7 +332,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
 
   if (errflag != 0) {
     sok_freefile(gamelist, level + 1);
-    return(-1);
+    return(errflag);
   }
 
   return(level + 1);
@@ -353,7 +383,7 @@ int sok_move(struct sokgame *game, enum SOKMOVE dir, int validitycheck, struct s
     states->history = realloc(states->history, states->historyallocsize);
     if (states->history == NULL) {
       printf("failed to allocate %ld bytes for history buffer!\n", states->historyallocsize);
-      return(-1);
+      return(ERR_MEM_ALLOC_FAILED);
     }
   }
   /* now let's do our real stuff */

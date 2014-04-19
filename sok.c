@@ -951,7 +951,7 @@ int main(int argc, char **argv) {
 
   if ((levelscount < 1) && (exitflag == 0)) {
     SDL_RenderClear(renderer);
-    printf("Failed to load the level file! [%d]\n", levelscount);
+    printf("Failed to load the level file [%d]: %s\n", levelscount, sok_strerr(levelscount));
     draw_string("Failed to load the level file!", sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
     wait_for_a_key(-1, renderer);
     exitflag = 1;
