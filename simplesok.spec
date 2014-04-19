@@ -65,5 +65,5 @@ install -D simplesok.png %buildroot/%_datadir/apps/%{name}/icons/hicolor/48x48/a
 %attr(644, root, root) %_datadir/apps/%{name}/icons/hicolor/48x48/apps/simplesok.png
 
 %changelog
-* Mon Apr 14 2014 Mateusz Viste <mateusz@viste-family.net> 1.0
+* Mon Apr 15 2014 Mateusz Viste <mateusz@viste-family.net> 1.0
  - First public release
