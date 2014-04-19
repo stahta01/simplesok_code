@@ -658,6 +658,12 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           case SDLK_END:
             selection = maxallowedlevel - 1;
             break;
+          case SDLK_PAGEUP:
+            if (tilesize < 255) tilesize += 4;
+            break;
+          case SDLK_PAGEDOWN:
+            if (tilesize > 6) tilesize -= 4;
+            break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
             return(selection);
@@ -764,7 +770,7 @@ int main(int argc, char **argv) {
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
   int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x, lastlevelleft;
-  int tilesize, playsolution, drawscreenflags;
+  int nativetilesize, tilesize, playsolution, drawscreenflags;
   char *levelfile = NULL;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
@@ -807,7 +813,7 @@ int main(int argc, char **argv) {
   /* Load sprites */
   loadGraphic(&sprites->atom, renderer, skin_atom_png, skin_atom_png_len);
   loadGraphic(&sprites->atom_on_goal, renderer, skin_atom_on_goal_png, skin_atom_on_goal_png_len);
-  tilesize = loadGraphic(&sprites->floor, renderer, skin_floor_png, skin_floor_png_len);
+  nativetilesize = loadGraphic(&sprites->floor, renderer, skin_floor_png, skin_floor_png_len);
   loadGraphic(&sprites->goal, renderer, skin_goal_png, skin_goal_png_len);
   loadGraphic(&sprites->player, renderer, skin_player_png, skin_player_png_len);
   loadGraphic(&sprites->intro, renderer, img_intro_png, img_intro_png_len);
@@ -937,6 +943,7 @@ int main(int argc, char **argv) {
 
   GametypeSelectMenu:
   levelscount = -1;
+  tilesize = nativetilesize;
   if (levelfile != NULL) {
       levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, levcomment, LEVCOMMENTMAXLEN);
     } else {
@@ -960,6 +967,7 @@ int main(int argc, char **argv) {
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
   LevelSelectMenu:
+  tilesize = nativetilesize;
   if (exitflag == 0) exitflag = flush_events();
 
   if (exitflag == 0) {
@@ -1041,6 +1049,12 @@ int main(int argc, char **argv) {
             dumplevel2clipboard(&game, states->history);
             exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
+          case SDLK_PAGEUP:
+            if (tilesize < 255) tilesize += 2;
+            break;
+          case SDLK_PAGEDOWN:
+            if (tilesize > 4) tilesize -= 2;
+            break;
           case SDLK_s:
             if (playsolution == 0) {
               if (game.solution != NULL) { /* only allow if there actually is a solution */
@@ -1101,6 +1115,8 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
+            int modulator = tilesize / 8;
+            if (modulator < 2) modulator = 2;
             if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
             if (movedir == sokmoveUP) offsety = -1;
@@ -1109,14 +1125,14 @@ int main(int argc, char **argv) {
             if (movedir == sokmoveLEFT) offsetx = -1;
             /* Will I need to move the player, or the entire field? */
             for (offset = 0; offset != tilesize * offsetx; offset += offsetx) {
-              if (offset % (tilesize / 8) == 0) {
+              if (offset % modulator == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
-              if (offset % (tilesize / 8) == 0) {
+              if (offset % modulator == 0) {
                 SDL_Delay(10);
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);

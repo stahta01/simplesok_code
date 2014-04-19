@@ -9,8 +9,8 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="488"
-   height="334"
+   width="490.48621"
+   height="357.15268"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
@@ -42,8 +42,8 @@
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.23"
-     inkscape:cx="180.71299"
-     inkscape:cy="161.03101"
+     inkscape:cx="181.9561"
+     inkscape:cy="172.60737"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -73,14 +73,14 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(34.267485,-745.31244)">
+     transform="translate(35.510591,-733.73611)">
     <rect
        style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3788)"
        id="rect3017"
-       width="407.31711"
-       height="253.65842"
-       x="6.0739608"
-       y="785.48322"
+       width="410.56915"
+       height="277.23563"
+       x="4.4479384"
+       y="773.69464"
        ry="16.93796" />
     <text
        xml:space="preserve"
@@ -108,11 +108,11 @@
        xml:space="preserve"
        id="flowRoot2999"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:DOSEGA;-inkscape-font-specification:DOSEGA Medium"
-       transform="translate(482.31015,842.83517)"><flowRegion
+       transform="translate(482.31015,834.64376)"><flowRegion
          id="flowRegion3001"><rect
            id="rect3003"
            width="290.2439"
-           height="210.56908"
+           height="227.64224"
            x="-417.88617"
            y="-34.959351" /></flowRegion><flowPara
          id="flowPara3005"
@@ -134,5 +134,7 @@
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3003">F9 - write current state of the level to clipboard</flowPara><flowPara
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3006">F11 - fullscreen on/off</flowPara></flowRoot>  </g>
+         id="flowPara3006">F11 - fullscreen on/off</flowPara><flowPara
+         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
+         id="flowPara3008">PgUp/PgDown - zoom up/down</flowPara></flowRoot>  </g>
 </svg>
