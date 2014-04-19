@@ -299,7 +299,10 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   rwop = SDL_RWFromMem(memptr, memlen);
   surface = IMG_LoadPNG_RW(rwop);
   SDL_FreeRW(rwop);
-  if (surface == NULL) return(-1);
+  if (surface == NULL) {
+    printf("IMG_LoadPNG_RW() failed: %s\n", IMG_GetError());
+    return(-1);
+  }
   res = surface->w;
   *texture = SDL_CreateTextureFromSurface(renderer, surface);
   if (*texture == NULL) printf("SDL_CreateTextureFromSurface() failed: %s\n", SDL_GetError());
@@ -774,8 +777,16 @@ int main(int argc, char **argv) {
   srand(time(NULL));
 
   /* Init SDL and set the video mode */
-  if (SDL_Init(SDL_INIT_VIDEO) != 0) printf("SDL_Init() failed: %s\n", SDL_GetError());
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    printf("SDL_Init() failed: %s\n", SDL_GetError());
+    return(1);
+  }
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");  /* this makes scaling nicer (use linear scaling instead of raw pixels) */
+
+  if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {  /* init SDL_image with PNG support */
+    printf("IMG_Init() failed: %s\n", IMG_GetError());
+    return(1);
+  }
 
   window = SDL_CreateWindow("Simple Sokoban " PVER, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_DEFAULT_WIDTH, SCREEN_DEFAULT_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (window == NULL) {
@@ -1176,6 +1187,7 @@ int main(int argc, char **argv) {
 
   /* clean up SDL */
   flush_events();
+  IMG_Quit();  /* clean up SDL_image */
   SDL_DestroyWindow(window);
   SDL_Quit();
 
