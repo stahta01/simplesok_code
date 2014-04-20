@@ -6,6 +6,7 @@
   - animated movements of the pusher on the intro screen,
   - added a thin border around the selected level in the level selection screen,
   - drawing 'wall caps' on 2x2 wall quads to avoid creating holes,
+  - changed the F9 action (save to clipboard) to CTRL+C key binding,
   - ...
 
  Simple Sokoban v1.0 [15 Apr 2014]

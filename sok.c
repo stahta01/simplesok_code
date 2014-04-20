@@ -1117,9 +1117,11 @@ int main(int argc, char **argv) {
             dumplevel2clipboard(gameslist[curlevel], gameslist[curlevel]->solution);
             exitflag = displaytexture(renderer, sprites->copiedtoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
-          case SDLK_F9: /* save current state of level to clipboard */
-            dumplevel2clipboard(&game, states->history);
-            exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
+          case SDLK_c:
+            if (SDL_GetModState() & KMOD_CTRL) {
+              dumplevel2clipboard(&game, states->history);
+              exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
+            }
             break;
           case SDLK_PAGEUP:
             if (tilesize < 255) tilesize += 2;
