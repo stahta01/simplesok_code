@@ -74,7 +74,7 @@ struct spritesstruct {
   SDL_Texture *intro;
   SDL_Texture *player;
   SDL_Texture *solved;
-  SDL_Texture *walls[16];
+  SDL_Texture *walls[24];
   SDL_Texture *font[128];
 };
 
@@ -263,7 +263,47 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
   if ((flags & DRAWPLAYFIELDTILE_DRAWATOM) == 0) {
       if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
       if (game->field[x][y] & field_goal) SDL_RenderCopy(renderer, sprites->goal, NULL, &rect);
-      if (game->field[x][y] & field_wall) SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
+      if (game->field[x][y] & field_wall) {
+        SDL_Rect srcrect, dstrect;
+        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
+        /* if we are at least at 2x2 and on a wall, then check if blocks above and on the left are all walls as well */
+        srcrect.w = tilesize >> 1;
+        srcrect.h = tilesize >> 1;
+        dstrect.w = tilesize >> 1;
+        dstrect.h = tilesize >> 1;
+        /* if yes, then draw a complete block to fill the ugly gap at the center */
+        if ((x > 0) && (y > 0) && (game->field[x - 1][y] & game->field[x][y - 1] & game->field[x - 1][y - 1] & field_wall)) {
+          srcrect.x = 0;
+          srcrect.y = 0;
+          dstrect.x = rect.x + srcrect.x;
+          dstrect.y = rect.y + srcrect.y;
+          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
+        }
+        /* if yes, then draw a complete block to fill the ugly gap at the center */
+        if ((y > 0) && (game->field[x + 1][y] & game->field[x][y - 1] & game->field[x + 1][y - 1] & field_wall)) {
+          srcrect.x = tilesize >> 1;
+          srcrect.y = 0;
+          dstrect.x = rect.x + srcrect.x;
+          dstrect.y = rect.y + srcrect.y;
+          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
+        }
+        /* if yes, then draw a complete block to fill the ugly gap at the center */
+        if ((x > 0) && (game->field[x - 1][y] & game->field[x][y + 1] & game->field[x - 1][y + 1] & field_wall)) {
+          srcrect.x = 0;
+          srcrect.y = tilesize >> 1;
+          dstrect.x = rect.x + srcrect.x;
+          dstrect.y = rect.y + srcrect.y;
+          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
+        }
+        /* if yes, then draw a complete block to fill the ugly gap at the center */
+        if ((game->field[x + 1][y] & game->field[x][y + 1] & game->field[x + 1][y + 1] & field_wall)) {
+          srcrect.x = tilesize >> 1;
+          srcrect.y = tilesize >> 1;
+          dstrect.x = rect.x + srcrect.x;
+          dstrect.y = rect.y + srcrect.y;
+          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
+        }
+      }
     } else {
       int atomongoal = 0;
       if ((game->field[x][y] & field_goal) && (game->field[x][y] & field_atom)) {
@@ -859,7 +899,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
 
   /* load walls */
-  for (x = 0; x < 16; x++) sprites->walls[x] = NULL;
+  for (x = 0; x < 24; x++) sprites->walls[x] = NULL;
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -876,6 +916,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->walls[13], renderer, skin_wall13_png, skin_wall13_png_len);
   loadGraphic(&sprites->walls[14], renderer, skin_wall14_png, skin_wall14_png_len);
   loadGraphic(&sprites->walls[15], renderer, skin_wall15_png, skin_wall15_png_len);
+  loadGraphic(&sprites->walls[16], renderer, skin_wall16_png, skin_wall16_png_len);
 
   /* load font */
   for (x = 0; x < 128; x++) sprites->font[x] = NULL;
@@ -1229,7 +1270,7 @@ int main(int argc, char **argv) {
   if (sprites->congrats) SDL_DestroyTexture(sprites->congrats);
   if (sprites->copiedtoclipboard) SDL_DestroyTexture(sprites->copiedtoclipboard);
   if (sprites->snapshottoclipboard) SDL_DestroyTexture(sprites->snapshottoclipboard);
-  for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
+  for (x = 0; x < 24; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
   for (x = 0; x < 128; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);
 
   /* clean up SDL */
