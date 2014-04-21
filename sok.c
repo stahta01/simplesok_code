@@ -84,6 +84,22 @@ static int absval(int i) {
   return(i);
 }
 
+/* a wrapper on the SDL_Delay() call. The difference is that it reminds the last call, so it knows if there is still time to wait or ont. This allows to smooth out delays, providing accurate delaying across platforms.
+ * Usage: first call it with a '0' parameter to initialize the timer, and then feed it with t miliseconds as many times as needed. */
+static void sokDelay(unsigned int t) {
+  static Uint32 lastelapsedtime = 0;
+  Uint32 starttime, stoptime = 0;
+  if (t == 0) lastelapsedtime = 0;
+  starttime = SDL_GetTicks();
+  while (lastelapsedtime < t) {
+    SDL_Delay(2);
+    stoptime = SDL_GetTicks();
+    /* if (starttime > stoptime + 1000) break; */ /* the SDL_GetTicks() wraps after 49 days */
+    lastelapsedtime += (stoptime - starttime);
+  }
+  lastelapsedtime -= t; /* remember how much remainder we have on wait time */
+}
+
 static void switchfullscreen(SDL_Window *window) {
   static int fullscreenflag = 0;
   fullscreenflag ^= 1;
@@ -483,13 +499,14 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
         }
     }
     /* perform the rotation */
+    sokDelay(0); /* init my delay timer */
     for (tmpangle = srcangle; ; tmpangle += dirmotion) {
       if (tmpangle >= 360) tmpangle = 0;
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
-      if (tmpangle % 10 == 0) {
+      if (tmpangle % 6 == 0) { /* turn 6 degress at a time */
         draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
-        SDL_Delay(10);
+        sokDelay(12); /* wait for 12ms */
       }
       if (tmpangle == dstangle) break;
     }
@@ -539,6 +556,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     if (oldpusherposy < 0) oldpusherposy = newpusherposy;
     /* draw the screen */
     rect.y = oldpusherposy;
+    sokDelay(0); /* init my delay timer */
     for (;;) {
       displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
       SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
@@ -554,7 +572,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
           rect.y += 5;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
-      SDL_Delay(10);
+      sokDelay(30); /* wait for 40ms */
     }
     oldpusherposy = newpusherposy;
 
@@ -752,10 +770,11 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
 
 static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture) {
   int alphaval, exitflag = 0;
+  sokDelay(0);  /* init my delay timer */
   for (alphaval = 0; alphaval < 64; alphaval += 3) {
     exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
     if (exitflag != 0) break;
-    SDL_Delay(30);
+    sokDelay(30);  /* wait for 30ms */
   }
   if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
   return(exitflag);
@@ -1123,6 +1142,12 @@ int main(int argc, char **argv) {
               exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
             }
             break;
+          case SDLK_v:
+            if (SDL_GetModState() & KMOD_CTRL) {
+              /* dumplevel2clipboard(&game, states->history);
+              exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255); */
+            }
+            break;
           case SDLK_PAGEUP:
             if (tilesize < 255) tilesize += 2;
             break;
@@ -1197,17 +1222,18 @@ int main(int argc, char **argv) {
             if (movedir == sokmoveRIGHT) offsetx = 1;
             if (movedir == sokmoveDOWN) offsety = 1;
             if (movedir == sokmoveLEFT) offsetx = -1;
+            sokDelay(0);  /* init my delay timer */
             /* Will I need to move the player, or the entire field? */
             for (offset = 0; offset != tilesize * offsetx; offset += offsetx) {
               if (offset % modulator == 0) {
-                SDL_Delay(10);
+                sokDelay(20);  /* wait 20ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % modulator == 0) {
-                SDL_Delay(10);
+                sokDelay(20);  /* wait 20ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
