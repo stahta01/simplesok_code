@@ -104,7 +104,7 @@ static void switchfullscreen(SDL_Window *window) {
   static int fullscreenflag = 0;
   fullscreenflag ^= 1;
   if (fullscreenflag != 0) {
-      SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+      SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
     } else {
       SDL_SetWindowFullscreen(window, 0);
   }
