@@ -74,7 +74,8 @@ struct spritesstruct {
   SDL_Texture *intro;
   SDL_Texture *player;
   SDL_Texture *solved;
-  SDL_Texture *walls[24];
+  SDL_Texture *walls[16];
+  SDL_Texture *wallcaps[4];
   SDL_Texture *font[128];
 };
 
@@ -255,6 +256,40 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
   }
 }
 
+int getWallCap(struct sokgame *game, int x, int y, SDL_Rect *dstrect, SDL_Rect *orgrect, int checknum) {
+  switch (checknum) {
+    case 0: /* top left corner */
+      dstrect->w = orgrect->w >> 1;
+      dstrect->h = orgrect->h >> 1;
+      dstrect->x = orgrect->x;
+      dstrect->y = orgrect->y;
+      if ((x > 0) && (y > 0) && (game->field[x - 1][y] & game->field[x][y - 1] & game->field[x - 1][y - 1] & field_wall)) return(1);
+      return(0);
+    case 1: /* top right corner */
+      dstrect->w = orgrect->w - (orgrect->w >> 1);
+      dstrect->h = orgrect->h >> 1;
+      dstrect->x = orgrect->x + dstrect->w;
+      dstrect->y = orgrect->y;
+      if ((y > 0) && (game->field[x + 1][y] & game->field[x][y - 1] & game->field[x + 1][y - 1] & field_wall)) return(1);
+      return(0);
+    case 2: /* bottom left corner */
+      dstrect->w = orgrect->w >> 1;
+      dstrect->h = orgrect->h - (orgrect->h >> 1);
+      dstrect->x = orgrect->x;
+      dstrect->y = orgrect->y + dstrect->h;
+      if ((x > 0) && (game->field[x - 1][y] & game->field[x][y + 1] & game->field[x - 1][y + 1] & field_wall)) return(1);
+      return(0);
+    case 3: /* bottom right corner */
+      dstrect->w = orgrect->w - (orgrect->w >> 1);
+      dstrect->h = orgrect->h - (orgrect->h >> 1);
+      dstrect->x = orgrect->x + dstrect->w;
+      dstrect->y = orgrect->y + dstrect->h;
+      if ((game->field[x + 1][y] & game->field[x][y + 1] & game->field[x + 1][y + 1] & field_wall)) return(1);
+      return(0);
+  }
+  return(0);
+}
+
 /* get an 'id' for a wall on a given position. this is a 4-bits bitfield that indicates where the wall has neighbors (up/right/down/left). */
 static int getwallid(struct sokgame *game, int x, int y) {
   int res = 0;
@@ -270,6 +305,7 @@ static int getwallid(struct sokgame *game, int x, int y) {
 
 static void draw_playfield_tile(struct sokgame *game, int x, int y, struct spritesstruct *sprites, SDL_Renderer *renderer, int winw, int winh, int tilesize, int flags, int moveoffsetx, int moveoffsety) {
   SDL_Rect rect;
+  int i;
   /* compute the dst rect */
   rect.x = getoffseth(game, winw, tilesize) + (x * tilesize) + moveoffsetx;
   rect.y = getoffsetv(game, winh, tilesize) + (y * tilesize) + moveoffsety;
@@ -280,44 +316,13 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
       if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
       if (game->field[x][y] & field_goal) SDL_RenderCopy(renderer, sprites->goal, NULL, &rect);
       if (game->field[x][y] & field_wall) {
-        SDL_Rect srcrect, dstrect;
+        SDL_Rect dstrect;
         SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
-        /* if we are at least at 2x2 and on a wall, then check if blocks above and on the left are all walls as well */
-        srcrect.w = tilesize >> 1;
-        srcrect.h = tilesize >> 1;
-        dstrect.w = tilesize >> 1;
-        dstrect.h = tilesize >> 1;
-        /* if yes, then draw a complete block to fill the ugly gap at the center */
-        if ((x > 0) && (y > 0) && (game->field[x - 1][y] & game->field[x][y - 1] & game->field[x - 1][y - 1] & field_wall)) {
-          srcrect.x = 0;
-          srcrect.y = 0;
-          dstrect.x = rect.x + srcrect.x;
-          dstrect.y = rect.y + srcrect.y;
-          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
-        }
-        /* if yes, then draw a complete block to fill the ugly gap at the center */
-        if ((y > 0) && (game->field[x + 1][y] & game->field[x][y - 1] & game->field[x + 1][y - 1] & field_wall)) {
-          srcrect.x = tilesize >> 1;
-          srcrect.y = 0;
-          dstrect.x = rect.x + srcrect.x;
-          dstrect.y = rect.y + srcrect.y;
-          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
-        }
-        /* if yes, then draw a complete block to fill the ugly gap at the center */
-        if ((x > 0) && (game->field[x - 1][y] & game->field[x][y + 1] & game->field[x - 1][y + 1] & field_wall)) {
-          srcrect.x = 0;
-          srcrect.y = tilesize >> 1;
-          dstrect.x = rect.x + srcrect.x;
-          dstrect.y = rect.y + srcrect.y;
-          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
-        }
-        /* if yes, then draw a complete block to fill the ugly gap at the center */
-        if ((game->field[x + 1][y] & game->field[x][y + 1] & game->field[x + 1][y + 1] & field_wall)) {
-          srcrect.x = tilesize >> 1;
-          srcrect.y = tilesize >> 1;
-          dstrect.x = rect.x + srcrect.x;
-          dstrect.y = rect.y + srcrect.y;
-          SDL_RenderCopy(renderer, sprites->walls[16], &srcrect, &dstrect);
+        /* draw the wall element (in 4 times, to draw caps when necessary) */
+        for (i = 0; i < 4; i++) {
+          if (getWallCap(game, x, y, &dstrect, &rect, i) != 0) {
+            SDL_RenderCopy(renderer, sprites->wallcaps[i], NULL, &dstrect);
+          }
         }
       }
     } else {
@@ -363,7 +368,11 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   }
   res = surface->w;
   *texture = SDL_CreateTextureFromSurface(renderer, surface);
-  if (*texture == NULL) printf("SDL_CreateTextureFromSurface() failed: %s\n", SDL_GetError());
+  if (*texture == NULL) {
+      printf("SDL_CreateTextureFromSurface() failed: %s\n", SDL_GetError());
+    } else {
+      SDL_SetTextureBlendMode(*texture, SDL_BLENDMODE_BLEND);
+  }
   SDL_FreeSurface(surface);
   return(res);
 }
@@ -615,29 +624,20 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   if (exitflag != 0) return(NULL);
 }
 
-static void RenderCopyWithAlpha(SDL_Renderer *renderer, SDL_Texture *texture, SDL_Rect *rect, int alpha) {
-  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-  SDL_SetTextureAlphaMod(texture, alpha);
-  SDL_RenderCopy(renderer, texture, NULL, rect);
-  SDL_SetTextureAlphaMod(texture, 255);
-}
-
 /* blit a level preview */
 static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int tilesize, int alpha, int flags) {
   int x, y, bgpadding = tilesize * 3;
   SDL_Rect rect, bgrect;
   rect.w = tilesize;
   rect.h = tilesize;
+  bgrect.x = xpos - (game->field_width * tilesize + bgpadding) / 2;
+  bgrect.y = ypos - (game->field_height * tilesize + bgpadding) / 2;
+  bgrect.w = game->field_width * tilesize + bgpadding;
+  bgrect.h = game->field_height * tilesize + bgpadding;
   /* if background enabled, compute coordinates of the background and draw it */
   if (flags & BLIT_LEVELMAP_BACKGROUND) {
-    bgrect.x = xpos - (game->field_width * tilesize + bgpadding) / 2;
-    bgrect.y = ypos - (game->field_height * tilesize + bgpadding) / 2;
-    bgrect.w = game->field_width * tilesize + bgpadding;
-    bgrect.h = game->field_height * tilesize + bgpadding;
     SDL_SetRenderDrawColor(renderer, 0x12, 0x12, 0x12, 255);
     SDL_RenderFillRect(renderer, &bgrect);
-    SDL_SetRenderDrawColor(renderer, 0x28, 0x28, 0x28, 255);
-    SDL_RenderDrawRect(renderer, &bgrect);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
   for (y = 0; y < game->field_height; y++) {
@@ -645,17 +645,39 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
       /* compute coordinates of the tile on screen */
       rect.x = xpos + (tilesize * x) - (game->field_width * tilesize) / 2;
       rect.y = ypos + (tilesize * y) - (game->field_height * tilesize) / 2;
+      rect.w = tilesize;
+      rect.h = tilesize;
       /* draw the tile */
-      if (game->field[x][y] & field_floor) RenderCopyWithAlpha(renderer, sprites->floor, &rect, alpha);
-      if (game->field[x][y] & field_wall) RenderCopyWithAlpha(renderer, sprites->walls[getwallid(game, x, y)], &rect, alpha);
+      if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
+      if (game->field[x][y] & field_wall) {
+        int i;
+        SDL_Rect dstrect;
+        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
+        /* check for neighbors and draw wall cap if needed */
+        for (i = 0; i < 4; i++) {
+          if (getWallCap(game, x, y, &dstrect, &rect, i) != 0) {
+            SDL_RenderCopy(renderer, sprites->wallcaps[i], NULL, &dstrect);
+          }
+        }
+      }
       if ((game->field[x][y] & field_goal) && (game->field[x][y] & field_atom)) { /* atom on goal */
-          RenderCopyWithAlpha(renderer, sprites->atom_on_goal, &rect, alpha);
+          SDL_RenderCopy(renderer, sprites->atom_on_goal, NULL, &rect);
         } else if (game->field[x][y] & field_goal) { /* goal */
-          RenderCopyWithAlpha(renderer, sprites->goal, &rect, alpha);
+          SDL_RenderCopy(renderer, sprites->goal, NULL, &rect);
         } else if (game->field[x][y] & field_atom) { /* atom */
-          RenderCopyWithAlpha(renderer, sprites->atom, &rect, alpha);
+          SDL_RenderCopy(renderer, sprites->atom, NULL, &rect);
       }
     }
+  }
+  /* apply alpha filter */
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255 - alpha);
+  SDL_RenderFillRect(renderer, &bgrect);
+  /* if background enabled, then draw the border */
+  if (flags & BLIT_LEVELMAP_BACKGROUND) {
+    SDL_SetRenderDrawColor(renderer, 0x28, 0x28, 0x28, 255);
+    SDL_RenderDrawRect(renderer, &bgrect);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
 }
 
@@ -692,7 +714,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* draw the screen */
     SDL_RenderClear(renderer);
     if (selection > 0) { /* draw the level before */
-      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 80, 0);
+      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 96, 0);
       if (gameslist[selection - 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -702,7 +724,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
       }
     }
     if (selection + 1 < maxallowedlevel) { /* draw the level after */
-      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 80, 0);
+      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 96, 0);
       if (gameslist[selection + 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -712,7 +734,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
       }
     }
     /* draw the selected level */
-    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 196, BLIT_LEVELMAP_BACKGROUND);
+    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 210, BLIT_LEVELMAP_BACKGROUND);
     if (gameslist[selection]->solution != NULL) {
       SDL_Rect rect;
       SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
@@ -925,7 +947,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
 
   /* load walls */
-  for (x = 0; x < 24; x++) sprites->walls[x] = NULL;
+  for (x = 0; x < 16; x++) sprites->walls[x] = NULL;
   loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
   loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
   loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
@@ -942,7 +964,13 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->walls[13], renderer, skin_wall13_png, skin_wall13_png_len);
   loadGraphic(&sprites->walls[14], renderer, skin_wall14_png, skin_wall14_png_len);
   loadGraphic(&sprites->walls[15], renderer, skin_wall15_png, skin_wall15_png_len);
-  loadGraphic(&sprites->walls[16], renderer, skin_wall16_png, skin_wall16_png_len);
+
+  /* load wall caps */
+  for (x = 0; x < 4; x++) sprites->wallcaps[x] = NULL;
+  loadGraphic(&sprites->wallcaps[0], renderer, skin_wallcap0_png, skin_wallcap0_png_len);
+  loadGraphic(&sprites->wallcaps[1], renderer, skin_wallcap1_png, skin_wallcap1_png_len);
+  loadGraphic(&sprites->wallcaps[2], renderer, skin_wallcap2_png, skin_wallcap2_png_len);
+  loadGraphic(&sprites->wallcaps[3], renderer, skin_wallcap3_png, skin_wallcap3_png_len);
 
   /* load font */
   for (x = 0; x < 128; x++) sprites->font[x] = NULL;
@@ -1235,14 +1263,14 @@ int main(int argc, char **argv) {
             /* Will I need to move the player, or the entire field? */
             for (offset = 0; offset != tilesize * offsetx; offset += offsetx) {
               if (offset % modulator == 0) {
-                sokDelay(20);  /* wait 20ms */
+                sokDelay(22);  /* wait 22ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % modulator == 0) {
-                sokDelay(20);  /* wait 20ms */
+                sokDelay(22);  /* wait 22ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
@@ -1307,7 +1335,8 @@ int main(int argc, char **argv) {
   if (sprites->congrats) SDL_DestroyTexture(sprites->congrats);
   if (sprites->copiedtoclipboard) SDL_DestroyTexture(sprites->copiedtoclipboard);
   if (sprites->snapshottoclipboard) SDL_DestroyTexture(sprites->snapshottoclipboard);
-  for (x = 0; x < 24; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
+  for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
+  for (x = 0; x < 4; x++) if (sprites->wallcaps[x]) SDL_DestroyTexture(sprites->wallcaps[x]);
   for (x = 0; x < 128; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);
 
   /* clean up SDL */
