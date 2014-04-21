@@ -770,6 +770,20 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           case SDLK_END:
             selection = maxallowedlevel - 1;
             break;
+          case SDLK_PAGEUP:
+            if (selection < 3) {
+                selection = 0;
+              } else {
+                selection -= 3;
+            }
+            break;
+          case SDLK_PAGEDOWN:
+            if (selection + 3 >= maxallowedlevel) {
+                selection = maxallowedlevel - 1;
+              } else {
+                selection += 3;
+            }
+            break;
           case SDLK_UP:
           case SDLK_KP_8:
             if (SDL_GetModState() & KMOD_CTRL) {
