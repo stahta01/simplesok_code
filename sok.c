@@ -634,8 +634,9 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
     bgrect.y = ypos - (game->field_height * tilesize + bgpadding) / 2;
     bgrect.w = game->field_width * tilesize + bgpadding;
     bgrect.h = game->field_height * tilesize + bgpadding;
+    SDL_SetRenderDrawColor(renderer, 0x12, 0x12, 0x12, 255);
     SDL_RenderFillRect(renderer, &bgrect);
-    SDL_SetRenderDrawColor(renderer, 0x90, 0x90, 0x00, 255);
+    SDL_SetRenderDrawColor(renderer, 0x28, 0x28, 0x28, 255);
     SDL_RenderDrawRect(renderer, &bgrect);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
