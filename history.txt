@@ -2,7 +2,7 @@
  Simple Sokoban v1.0.1 [xx May 2014]
   - added support for CR/LF formatted XSB files,
   - replaced the "original" levels set by a freely available set by David W. Skinner,
-  - implemented zooming (PgUp/PgDown),
+  - implemented zooming (CTRL+UP / CTRL+DOWN),
   - animated movements of the pusher on the intro screen,
   - added a thin border around the selected level in the level selection screen,
   - drawing 'wall caps' on 2x2 wall quads to avoid creating holes,

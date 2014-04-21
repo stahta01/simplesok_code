@@ -130,11 +130,11 @@
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3004">F2 - turn on/off graphical elements</flowPara><flowPara
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3002">F5 - dump the level to clipboard (with solution)</flowPara><flowPara
-         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3003">F9 - write current state of the level to clipboard</flowPara><flowPara
+         id="flowPara3003">F5 - dump the level to clipboard (with solution)</flowPara><flowPara
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3006">F11 - fullscreen on/off</flowPara><flowPara
          style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3008">PgUp/PgDown - zoom up/down</flowPara></flowRoot>  </g>
+         id="flowPara3010">CTRL+C - copy current level state to clipboard</flowPara><flowPara
+         style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
+         id="flowPara3008">CTRL+UP / CTRL+DOWN - zoom in/out</flowPara></flowRoot>  </g>
 </svg>

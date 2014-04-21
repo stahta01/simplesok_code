@@ -747,11 +747,17 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           case SDLK_END:
             selection = maxallowedlevel - 1;
             break;
-          case SDLK_PAGEUP:
-            if (tilesize < 255) tilesize += 4;
+          case SDLK_UP:
+          case SDLK_KP_8:
+            if (SDL_GetModState() & KMOD_CTRL) {
+              if (tilesize < 255) tilesize += 4;
+            }
             break;
-          case SDLK_PAGEDOWN:
-            if (tilesize > 6) tilesize -= 4;
+          case SDLK_DOWN:
+          case SDLK_KP_2:
+            if (SDL_GetModState() & KMOD_CTRL) {
+              if (tilesize > 6) tilesize -= 4;
+            }
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
@@ -1118,12 +1124,20 @@ int main(int argc, char **argv) {
             movedir = sokmoveRIGHT;
             break;
           case SDLK_UP:
-          case SDLK_KP_8:
-            movedir = sokmoveUP;
+          case SDLK_KP_8: /* up - or zoom in (if used with CTRL) */
+            if (SDL_GetModState() & KMOD_CTRL) {
+                if (tilesize < 255) tilesize += 2;
+              } else {
+                movedir = sokmoveUP;
+            }
             break;
           case SDLK_DOWN:
-          case SDLK_KP_2:
-            movedir = sokmoveDOWN;
+          case SDLK_KP_2: /* down - or zoom out (if used with CTRL) */
+            if (SDL_GetModState() & KMOD_CTRL) {
+                if (tilesize > 4) tilesize -= 2;
+              } else {
+                movedir = sokmoveDOWN;
+            }
             break;
           case SDLK_BACKSPACE:
             if (playsolution == 0) sok_undo(&game, states);
@@ -1147,12 +1161,6 @@ int main(int argc, char **argv) {
               /* dumplevel2clipboard(&game, states->history);
               exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255); */
             }
-            break;
-          case SDLK_PAGEUP:
-            if (tilesize < 255) tilesize += 2;
-            break;
-          case SDLK_PAGEDOWN:
-            if (tilesize > 4) tilesize -= 2;
             break;
           case SDLK_s:
             if (playsolution == 0) {
