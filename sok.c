@@ -94,7 +94,7 @@ static void sokDelay(unsigned int t) {
   while (lastelapsedtime < t) {
     SDL_Delay(2);
     stoptime = SDL_GetTicks();
-    /* if (starttime > stoptime + 1000) break; */ /* the SDL_GetTicks() wraps after 49 days */
+    if (starttime > stoptime + 1000) break; /* the SDL_GetTicks() wraps after 49 days */
     lastelapsedtime += (stoptime - starttime);
   }
   lastelapsedtime -= t; /* remember how much remainder we have on wait time */
