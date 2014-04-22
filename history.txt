@@ -10,6 +10,7 @@
   - improved the delay routine to keep the same framerate across platforms,
   - PgUp/PgDown keys support in the selection level menu,
   - added support for pasting moves from clipboard (CTRL+V),
+  - replaced PNG files by bmp.gz - close efficiency, but without creating dependencies with SDL2_image, libpng and libz,
   - ...
 
  Simple Sokoban v1.0 [15 Apr 2014]

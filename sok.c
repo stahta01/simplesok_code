@@ -21,13 +21,13 @@
 #include <string.h>             /* memcpy() */
 #include <time.h>
 #include <SDL2/SDL.h>           /* SDL       */
-#include <SDL2/SDL_image.h>     /* SDL_image */
 #include "sok_core.h"
 #include "data_lev.h"           /* embedded image files */
 #include "data_img.h"           /* embedded level files */
 #include "data_fnt.h"           /* embedded font files */
 #include "data_skn.h"           /* embedded skin files */
 #include "data_ico.h"           /* embedded the icon file */
+#include "gzbmp.h"
 
 #define PVER "v1.0.1 beta"
 
@@ -383,12 +383,9 @@ static void draw_player(struct sokgame *game, struct sokgamestates *states, stru
 static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memptr, int memlen) {
   int res;
   SDL_Surface *surface;
-  SDL_RWops *rwop;
-  rwop = SDL_RWFromMem(memptr, memlen);
-  surface = IMG_LoadPNG_RW(rwop);
-  SDL_FreeRW(rwop);
+  surface = loadgzbmp(memptr, memlen);
   if (surface == NULL) {
-    printf("IMG_LoadPNG_RW() failed: %s\n", IMG_GetError());
+    puts("loadgzbmp() failed!");
     return(-1);
   }
   res = surface->w;
@@ -851,10 +848,7 @@ static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture 
 /* sets the icon in the aplication's title bar */
 static void setsokicon(SDL_Window *window) {
   SDL_Surface *surface;
-  SDL_RWops *rwop;
-  rwop = SDL_RWFromMem(simplesok_png, simplesok_png_len);
-  surface = IMG_LoadPNG_RW(rwop);
-  SDL_FreeRW(rwop);
+  surface = loadgzbmp(simplesok_bmp_gz, simplesok_bmp_gz_len);
   if (surface == NULL) return;
   SDL_SetWindowIcon(window, surface);
   SDL_FreeSurface(surface); /* once the icon is loaded, the surface is not needed anymore */
@@ -948,11 +942,6 @@ int main(int argc, char **argv) {
   }
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");  /* this makes scaling nicer (use linear scaling instead of raw pixels) */
 
-  if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0) {  /* init SDL_image with PNG support */
-    printf("IMG_Init() failed: %s\n", IMG_GetError());
-    return(1);
-  }
-
   window = SDL_CreateWindow("Simple Sokoban " PVER, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_DEFAULT_WIDTH, SCREEN_DEFAULT_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (window == NULL) {
     printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -970,127 +959,127 @@ int main(int argc, char **argv) {
   }
 
   /* Load sprites */
-  loadGraphic(&sprites->atom, renderer, skin_atom_png, skin_atom_png_len);
-  loadGraphic(&sprites->atom_on_goal, renderer, skin_atom_on_goal_png, skin_atom_on_goal_png_len);
-  nativetilesize = loadGraphic(&sprites->floor, renderer, skin_floor_png, skin_floor_png_len);
-  loadGraphic(&sprites->goal, renderer, skin_goal_png, skin_goal_png_len);
-  loadGraphic(&sprites->player, renderer, skin_player_png, skin_player_png_len);
-  loadGraphic(&sprites->intro, renderer, img_intro_png, img_intro_png_len);
-  loadGraphic(&sprites->bg, renderer, skin_bg_png, skin_bg_png_len);
-  loadGraphic(&sprites->black, renderer, img_black_png, img_black_png_len);
-  loadGraphic(&sprites->cleared, renderer, img_cleared_png, img_cleared_png_len);
-  loadGraphic(&sprites->help, renderer, img_help_png, img_help_png_len);
-  loadGraphic(&sprites->solved, renderer, img_solved_png, img_solved_png_len);
-  loadGraphic(&sprites->nosolution, renderer, img_nosol_png, img_nosol_png_len);
-  loadGraphic(&sprites->congrats, renderer, img_congrats_png, img_congrats_png_len);
-  loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_png, img_copiedtoclipboard_png_len);
-  loadGraphic(&sprites->playfromclipboard, renderer, img_playfromclipboard_png, img_playfromclipboard_png_len);
-  loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
+  loadGraphic(&sprites->atom, renderer, skin_atom_bmp_gz, skin_atom_bmp_gz_len);
+  loadGraphic(&sprites->atom_on_goal, renderer, skin_atom_on_goal_bmp_gz, skin_atom_on_goal_bmp_gz_len);
+  nativetilesize = loadGraphic(&sprites->floor, renderer, skin_floor_bmp_gz, skin_floor_bmp_gz_len);
+  loadGraphic(&sprites->goal, renderer, skin_goal_bmp_gz, skin_goal_bmp_gz_len);
+  loadGraphic(&sprites->player, renderer, skin_player_bmp_gz, skin_player_bmp_gz_len);
+  loadGraphic(&sprites->intro, renderer, img_intro_bmp_gz, img_intro_bmp_gz_len);
+  loadGraphic(&sprites->bg, renderer, skin_bg_bmp_gz, skin_bg_bmp_gz_len);
+  loadGraphic(&sprites->black, renderer, img_black_bmp_gz, img_black_bmp_gz_len);
+  loadGraphic(&sprites->cleared, renderer, img_cleared_bmp_gz, img_cleared_bmp_gz_len);
+  loadGraphic(&sprites->help, renderer, img_help_bmp_gz, img_help_bmp_gz_len);
+  loadGraphic(&sprites->solved, renderer, img_solved_bmp_gz, img_solved_bmp_gz_len);
+  loadGraphic(&sprites->nosolution, renderer, img_nosol_bmp_gz, img_nosol_bmp_gz_len);
+  loadGraphic(&sprites->congrats, renderer, img_congrats_bmp_gz, img_congrats_bmp_gz_len);
+  loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_bmp_gz, img_copiedtoclipboard_bmp_gz_len);
+  loadGraphic(&sprites->playfromclipboard, renderer, img_playfromclipboard_bmp_gz, img_playfromclipboard_bmp_gz_len);
+  loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_bmp_gz, img_snapshottoclipboard_bmp_gz_len);
 
   /* load walls */
   for (x = 0; x < 16; x++) sprites->walls[x] = NULL;
-  loadGraphic(&sprites->walls[0],  renderer, skin_wall0_png,  skin_wall0_png_len);
-  loadGraphic(&sprites->walls[1],  renderer, skin_wall1_png,  skin_wall1_png_len);
-  loadGraphic(&sprites->walls[2],  renderer, skin_wall2_png,  skin_wall2_png_len);
-  loadGraphic(&sprites->walls[3],  renderer, skin_wall3_png,  skin_wall3_png_len);
-  loadGraphic(&sprites->walls[4],  renderer, skin_wall4_png,  skin_wall4_png_len);
-  loadGraphic(&sprites->walls[5],  renderer, skin_wall5_png,  skin_wall5_png_len);
-  loadGraphic(&sprites->walls[6],  renderer, skin_wall6_png,  skin_wall6_png_len);
-  loadGraphic(&sprites->walls[7],  renderer, skin_wall7_png,  skin_wall7_png_len);
-  loadGraphic(&sprites->walls[8],  renderer, skin_wall8_png,  skin_wall8_png_len);
-  loadGraphic(&sprites->walls[9],  renderer, skin_wall9_png,  skin_wall9_png_len);
-  loadGraphic(&sprites->walls[10], renderer, skin_wall10_png, skin_wall10_png_len);
-  loadGraphic(&sprites->walls[11], renderer, skin_wall11_png, skin_wall11_png_len);
-  loadGraphic(&sprites->walls[12], renderer, skin_wall12_png, skin_wall12_png_len);
-  loadGraphic(&sprites->walls[13], renderer, skin_wall13_png, skin_wall13_png_len);
-  loadGraphic(&sprites->walls[14], renderer, skin_wall14_png, skin_wall14_png_len);
-  loadGraphic(&sprites->walls[15], renderer, skin_wall15_png, skin_wall15_png_len);
+  loadGraphic(&sprites->walls[0],  renderer, skin_wall0_bmp_gz,  skin_wall0_bmp_gz_len);
+  loadGraphic(&sprites->walls[1],  renderer, skin_wall1_bmp_gz,  skin_wall1_bmp_gz_len);
+  loadGraphic(&sprites->walls[2],  renderer, skin_wall2_bmp_gz,  skin_wall2_bmp_gz_len);
+  loadGraphic(&sprites->walls[3],  renderer, skin_wall3_bmp_gz,  skin_wall3_bmp_gz_len);
+  loadGraphic(&sprites->walls[4],  renderer, skin_wall4_bmp_gz,  skin_wall4_bmp_gz_len);
+  loadGraphic(&sprites->walls[5],  renderer, skin_wall5_bmp_gz,  skin_wall5_bmp_gz_len);
+  loadGraphic(&sprites->walls[6],  renderer, skin_wall6_bmp_gz,  skin_wall6_bmp_gz_len);
+  loadGraphic(&sprites->walls[7],  renderer, skin_wall7_bmp_gz,  skin_wall7_bmp_gz_len);
+  loadGraphic(&sprites->walls[8],  renderer, skin_wall8_bmp_gz,  skin_wall8_bmp_gz_len);
+  loadGraphic(&sprites->walls[9],  renderer, skin_wall9_bmp_gz,  skin_wall9_bmp_gz_len);
+  loadGraphic(&sprites->walls[10], renderer, skin_wall10_bmp_gz, skin_wall10_bmp_gz_len);
+  loadGraphic(&sprites->walls[11], renderer, skin_wall11_bmp_gz, skin_wall11_bmp_gz_len);
+  loadGraphic(&sprites->walls[12], renderer, skin_wall12_bmp_gz, skin_wall12_bmp_gz_len);
+  loadGraphic(&sprites->walls[13], renderer, skin_wall13_bmp_gz, skin_wall13_bmp_gz_len);
+  loadGraphic(&sprites->walls[14], renderer, skin_wall14_bmp_gz, skin_wall14_bmp_gz_len);
+  loadGraphic(&sprites->walls[15], renderer, skin_wall15_bmp_gz, skin_wall15_bmp_gz_len);
 
   /* load wall caps */
   for (x = 0; x < 4; x++) sprites->wallcaps[x] = NULL;
-  loadGraphic(&sprites->wallcaps[0], renderer, skin_wallcap0_png, skin_wallcap0_png_len);
-  loadGraphic(&sprites->wallcaps[1], renderer, skin_wallcap1_png, skin_wallcap1_png_len);
-  loadGraphic(&sprites->wallcaps[2], renderer, skin_wallcap2_png, skin_wallcap2_png_len);
-  loadGraphic(&sprites->wallcaps[3], renderer, skin_wallcap3_png, skin_wallcap3_png_len);
+  loadGraphic(&sprites->wallcaps[0], renderer, skin_wallcap0_bmp_gz, skin_wallcap0_bmp_gz_len);
+  loadGraphic(&sprites->wallcaps[1], renderer, skin_wallcap1_bmp_gz, skin_wallcap1_bmp_gz_len);
+  loadGraphic(&sprites->wallcaps[2], renderer, skin_wallcap2_bmp_gz, skin_wallcap2_bmp_gz_len);
+  loadGraphic(&sprites->wallcaps[3], renderer, skin_wallcap3_bmp_gz, skin_wallcap3_bmp_gz_len);
 
   /* load font */
   for (x = 0; x < 128; x++) sprites->font[x] = NULL;
-  loadGraphic(&sprites->font[char2fontid('0')], renderer, font_0_png, font_0_png_len);
-  loadGraphic(&sprites->font[char2fontid('1')], renderer, font_1_png, font_1_png_len);
-  loadGraphic(&sprites->font[char2fontid('2')], renderer, font_2_png, font_2_png_len);
-  loadGraphic(&sprites->font[char2fontid('3')], renderer, font_3_png, font_3_png_len);
-  loadGraphic(&sprites->font[char2fontid('4')], renderer, font_4_png, font_4_png_len);
-  loadGraphic(&sprites->font[char2fontid('5')], renderer, font_5_png, font_5_png_len);
-  loadGraphic(&sprites->font[char2fontid('6')], renderer, font_6_png, font_6_png_len);
-  loadGraphic(&sprites->font[char2fontid('7')], renderer, font_7_png, font_7_png_len);
-  loadGraphic(&sprites->font[char2fontid('8')], renderer, font_8_png, font_8_png_len);
-  loadGraphic(&sprites->font[char2fontid('9')], renderer, font_9_png, font_9_png_len);
-  loadGraphic(&sprites->font[char2fontid('a')], renderer, font_a_png, font_a_png_len);
-  loadGraphic(&sprites->font[char2fontid('b')], renderer, font_b_png, font_b_png_len);
-  loadGraphic(&sprites->font[char2fontid('c')], renderer, font_c_png, font_c_png_len);
-  loadGraphic(&sprites->font[char2fontid('d')], renderer, font_d_png, font_d_png_len);
-  loadGraphic(&sprites->font[char2fontid('e')], renderer, font_e_png, font_e_png_len);
-  loadGraphic(&sprites->font[char2fontid('f')], renderer, font_f_png, font_f_png_len);
-  loadGraphic(&sprites->font[char2fontid('g')], renderer, font_g_png, font_g_png_len);
-  loadGraphic(&sprites->font[char2fontid('h')], renderer, font_h_png, font_h_png_len);
-  loadGraphic(&sprites->font[char2fontid('i')], renderer, font_i_png, font_i_png_len);
-  loadGraphic(&sprites->font[char2fontid('j')], renderer, font_j_png, font_j_png_len);
-  loadGraphic(&sprites->font[char2fontid('k')], renderer, font_k_png, font_k_png_len);
-  loadGraphic(&sprites->font[char2fontid('l')], renderer, font_l_png, font_l_png_len);
-  loadGraphic(&sprites->font[char2fontid('m')], renderer, font_m_png, font_m_png_len);
-  loadGraphic(&sprites->font[char2fontid('n')], renderer, font_n_png, font_n_png_len);
-  loadGraphic(&sprites->font[char2fontid('o')], renderer, font_o_png, font_o_png_len);
-  loadGraphic(&sprites->font[char2fontid('p')], renderer, font_p_png, font_p_png_len);
-  loadGraphic(&sprites->font[char2fontid('q')], renderer, font_q_png, font_q_png_len);
-  loadGraphic(&sprites->font[char2fontid('r')], renderer, font_r_png, font_r_png_len);
-  loadGraphic(&sprites->font[char2fontid('s')], renderer, font_s_png, font_s_png_len);
-  loadGraphic(&sprites->font[char2fontid('t')], renderer, font_t_png, font_t_png_len);
-  loadGraphic(&sprites->font[char2fontid('u')], renderer, font_u_png, font_u_png_len);
-  loadGraphic(&sprites->font[char2fontid('v')], renderer, font_v_png, font_v_png_len);
-  loadGraphic(&sprites->font[char2fontid('w')], renderer, font_w_png, font_w_png_len);
-  loadGraphic(&sprites->font[char2fontid('x')], renderer, font_x_png, font_x_png_len);
-  loadGraphic(&sprites->font[char2fontid('y')], renderer, font_y_png, font_y_png_len);
-  loadGraphic(&sprites->font[char2fontid('z')], renderer, font_z_png, font_z_png_len);
-  loadGraphic(&sprites->font[char2fontid('A')], renderer, font_aa_png, font_aa_png_len);
-  loadGraphic(&sprites->font[char2fontid('B')], renderer, font_bb_png, font_bb_png_len);
-  loadGraphic(&sprites->font[char2fontid('C')], renderer, font_cc_png, font_cc_png_len);
-  loadGraphic(&sprites->font[char2fontid('D')], renderer, font_dd_png, font_dd_png_len);
-  loadGraphic(&sprites->font[char2fontid('E')], renderer, font_ee_png, font_ee_png_len);
-  loadGraphic(&sprites->font[char2fontid('F')], renderer, font_ff_png, font_ff_png_len);
-  loadGraphic(&sprites->font[char2fontid('G')], renderer, font_gg_png, font_gg_png_len);
-  loadGraphic(&sprites->font[char2fontid('H')], renderer, font_hh_png, font_hh_png_len);
-  loadGraphic(&sprites->font[char2fontid('I')], renderer, font_ii_png, font_ii_png_len);
-  loadGraphic(&sprites->font[char2fontid('J')], renderer, font_jj_png, font_jj_png_len);
-  loadGraphic(&sprites->font[char2fontid('K')], renderer, font_kk_png, font_kk_png_len);
-  loadGraphic(&sprites->font[char2fontid('L')], renderer, font_ll_png, font_ll_png_len);
-  loadGraphic(&sprites->font[char2fontid('M')], renderer, font_mm_png, font_mm_png_len);
-  loadGraphic(&sprites->font[char2fontid('N')], renderer, font_nn_png, font_nn_png_len);
-  loadGraphic(&sprites->font[char2fontid('O')], renderer, font_oo_png, font_oo_png_len);
-  loadGraphic(&sprites->font[char2fontid('P')], renderer, font_pp_png, font_pp_png_len);
-  loadGraphic(&sprites->font[char2fontid('Q')], renderer, font_qq_png, font_qq_png_len);
-  loadGraphic(&sprites->font[char2fontid('R')], renderer, font_rr_png, font_rr_png_len);
-  loadGraphic(&sprites->font[char2fontid('S')], renderer, font_ss_png, font_ss_png_len);
-  loadGraphic(&sprites->font[char2fontid('T')], renderer, font_tt_png, font_tt_png_len);
-  loadGraphic(&sprites->font[char2fontid('U')], renderer, font_uu_png, font_uu_png_len);
-  loadGraphic(&sprites->font[char2fontid('V')], renderer, font_vv_png, font_vv_png_len);
-  loadGraphic(&sprites->font[char2fontid('W')], renderer, font_ww_png, font_ww_png_len);
-  loadGraphic(&sprites->font[char2fontid('X')], renderer, font_xx_png, font_xx_png_len);
-  loadGraphic(&sprites->font[char2fontid('Y')], renderer, font_yy_png, font_yy_png_len);
-  loadGraphic(&sprites->font[char2fontid('Z')], renderer, font_zz_png, font_zz_png_len);
-  loadGraphic(&sprites->font[char2fontid(':')], renderer, font_sym_col_png, font_sym_col_png_len);
-  loadGraphic(&sprites->font[char2fontid('!')], renderer, font_sym_excl_png, font_sym_excl_png_len);
-  loadGraphic(&sprites->font[char2fontid('$')], renderer, font_sym_doll_png, font_sym_doll_png_len);
-  loadGraphic(&sprites->font[char2fontid('.')], renderer, font_sym_dot_png, font_sym_dot_png_len);
-  loadGraphic(&sprites->font[char2fontid('&')], renderer, font_sym_ampe_png, font_sym_ampe_png_len);
-  loadGraphic(&sprites->font[char2fontid('*')], renderer, font_sym_star_png, font_sym_star_png_len);
-  loadGraphic(&sprites->font[char2fontid(',')], renderer, font_sym_comm_png, font_sym_comm_png_len);
-  loadGraphic(&sprites->font[char2fontid('(')], renderer, font_sym_par1_png, font_sym_par1_png_len);
-  loadGraphic(&sprites->font[char2fontid(')')], renderer, font_sym_par2_png, font_sym_par2_png_len);
-  loadGraphic(&sprites->font[char2fontid('[')], renderer, font_sym_bra1_png, font_sym_bra1_png_len);
-  loadGraphic(&sprites->font[char2fontid(']')], renderer, font_sym_bra2_png, font_sym_bra2_png_len);
-  loadGraphic(&sprites->font[char2fontid('-')], renderer, font_sym_minu_png, font_sym_minu_png_len);
-  loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_png, font_sym_unde_png_len);
-  loadGraphic(&sprites->font[char2fontid('/')], renderer, font_sym_slas_png, font_sym_slas_png_len);
+  loadGraphic(&sprites->font[char2fontid('0')], renderer, font_0_bmp_gz, font_0_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('1')], renderer, font_1_bmp_gz, font_1_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('2')], renderer, font_2_bmp_gz, font_2_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('3')], renderer, font_3_bmp_gz, font_3_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('4')], renderer, font_4_bmp_gz, font_4_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('5')], renderer, font_5_bmp_gz, font_5_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('6')], renderer, font_6_bmp_gz, font_6_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('7')], renderer, font_7_bmp_gz, font_7_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('8')], renderer, font_8_bmp_gz, font_8_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('9')], renderer, font_9_bmp_gz, font_9_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('a')], renderer, font_a_bmp_gz, font_a_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('b')], renderer, font_b_bmp_gz, font_b_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('c')], renderer, font_c_bmp_gz, font_c_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('d')], renderer, font_d_bmp_gz, font_d_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('e')], renderer, font_e_bmp_gz, font_e_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('f')], renderer, font_f_bmp_gz, font_f_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('g')], renderer, font_g_bmp_gz, font_g_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('h')], renderer, font_h_bmp_gz, font_h_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('i')], renderer, font_i_bmp_gz, font_i_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('j')], renderer, font_j_bmp_gz, font_j_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('k')], renderer, font_k_bmp_gz, font_k_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('l')], renderer, font_l_bmp_gz, font_l_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('m')], renderer, font_m_bmp_gz, font_m_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('n')], renderer, font_n_bmp_gz, font_n_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('o')], renderer, font_o_bmp_gz, font_o_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('p')], renderer, font_p_bmp_gz, font_p_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('q')], renderer, font_q_bmp_gz, font_q_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('r')], renderer, font_r_bmp_gz, font_r_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('s')], renderer, font_s_bmp_gz, font_s_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('t')], renderer, font_t_bmp_gz, font_t_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('u')], renderer, font_u_bmp_gz, font_u_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('v')], renderer, font_v_bmp_gz, font_v_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('w')], renderer, font_w_bmp_gz, font_w_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('x')], renderer, font_x_bmp_gz, font_x_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('y')], renderer, font_y_bmp_gz, font_y_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('z')], renderer, font_z_bmp_gz, font_z_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('A')], renderer, font_aa_bmp_gz, font_aa_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('B')], renderer, font_bb_bmp_gz, font_bb_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('C')], renderer, font_cc_bmp_gz, font_cc_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('D')], renderer, font_dd_bmp_gz, font_dd_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('E')], renderer, font_ee_bmp_gz, font_ee_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('F')], renderer, font_ff_bmp_gz, font_ff_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('G')], renderer, font_gg_bmp_gz, font_gg_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('H')], renderer, font_hh_bmp_gz, font_hh_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('I')], renderer, font_ii_bmp_gz, font_ii_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('J')], renderer, font_jj_bmp_gz, font_jj_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('K')], renderer, font_kk_bmp_gz, font_kk_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('L')], renderer, font_ll_bmp_gz, font_ll_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('M')], renderer, font_mm_bmp_gz, font_mm_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('N')], renderer, font_nn_bmp_gz, font_nn_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('O')], renderer, font_oo_bmp_gz, font_oo_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('P')], renderer, font_pp_bmp_gz, font_pp_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('Q')], renderer, font_qq_bmp_gz, font_qq_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('R')], renderer, font_rr_bmp_gz, font_rr_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('S')], renderer, font_ss_bmp_gz, font_ss_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('T')], renderer, font_tt_bmp_gz, font_tt_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('U')], renderer, font_uu_bmp_gz, font_uu_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('V')], renderer, font_vv_bmp_gz, font_vv_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('W')], renderer, font_ww_bmp_gz, font_ww_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('X')], renderer, font_xx_bmp_gz, font_xx_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('Y')], renderer, font_yy_bmp_gz, font_yy_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('Z')], renderer, font_zz_bmp_gz, font_zz_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid(':')], renderer, font_sym_col_bmp_gz, font_sym_col_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('!')], renderer, font_sym_excl_bmp_gz, font_sym_excl_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('$')], renderer, font_sym_doll_bmp_gz, font_sym_doll_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('.')], renderer, font_sym_dot_bmp_gz, font_sym_dot_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('&')], renderer, font_sym_ampe_bmp_gz, font_sym_ampe_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('*')], renderer, font_sym_star_bmp_gz, font_sym_star_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid(',')], renderer, font_sym_comm_bmp_gz, font_sym_comm_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('(')], renderer, font_sym_par1_bmp_gz, font_sym_par1_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid(')')], renderer, font_sym_par2_bmp_gz, font_sym_par2_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('[')], renderer, font_sym_bra1_bmp_gz, font_sym_bra1_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid(']')], renderer, font_sym_bra2_bmp_gz, font_sym_bra2_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('-')], renderer, font_sym_minu_bmp_gz, font_sym_minu_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_bmp_gz, font_sym_unde_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('/')], renderer, font_sym_slas_bmp_gz, font_sym_slas_bmp_gz_len);
 
   /* Hide the mouse cursor, disable mouse events and make sure DropEvents are enabled (sometimes they are not) */
   SDL_ShowCursor(SDL_DISABLE);
@@ -1396,7 +1385,6 @@ int main(int argc, char **argv) {
 
   /* clean up SDL */
   flush_events();
-  IMG_Quit();  /* clean up SDL_image */
   SDL_DestroyWindow(window);
   SDL_Quit();
 

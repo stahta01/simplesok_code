@@ -28,14 +28,9 @@ Source0: %{name}-%{version}.tar.gz
 
 %if 0%{?fedora}
 BuildRequires: SDL2-devel >= 2.0.1
-BuildRequires: SDL2_image-devel
 %else
 BuildRequires: libSDL2-devel >= 2.0.1
-BuildRequires: libSDL2_image-devel
 %endif
-
-BuildRequires: libpng-devel
-BuildRequires: zlib-devel
 
 %description
 Simple Sokoban is a (simple) Sokoban game aimed for playability and portability across systems. It is written in ANSI C89, using SDL for user interactions. I developed it natively under x86_64 Linux, but it should compile just fine on virtually anything that has a C compiler and the SDL library.
