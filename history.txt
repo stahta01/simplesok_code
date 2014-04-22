@@ -8,6 +8,8 @@
   - drawing 'wall caps' on 2x2 wall quads to avoid creating holes,
   - changed the F9 action (save to clipboard) to CTRL+C key binding,
   - improved the delay routine to keep the same framerate across platforms,
+  - PgUp/PgDown keys support in the selection level menu,
+  - added support for pasting moves from clipboard (CTRL+V),
   - ...
 
  Simple Sokoban v1.0 [15 Apr 2014]

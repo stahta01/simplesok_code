@@ -67,6 +67,7 @@ struct spritesstruct {
   SDL_Texture *nosolution;
   SDL_Texture *congrats;
   SDL_Texture *copiedtoclipboard;
+  SDL_Texture *playfromclipboard;
   SDL_Texture *snapshottoclipboard;
   SDL_Texture *floor;
   SDL_Texture *goal;
@@ -83,6 +84,30 @@ struct spritesstruct {
 static int absval(int i) {
   if (i < 0) return(-i);
   return(i);
+}
+
+/* returns 0 if string is not a legal solution. non-zero otherwise. */
+static int isLegalSokoSolution(char *solstr) {
+  if (solstr == NULL) return(0);
+  if (strlen(solstr) < 1) return(0);
+  for (;;) {
+    switch (*solstr) {
+      case 'u':
+      case 'U':
+      case 'r':
+      case 'R':
+      case 'd':
+      case 'D':
+      case 'l':
+      case 'L':
+        break;
+      case 0:
+        return(1);
+      default:
+        return(0);
+    }
+    solstr += 1;
+  }
 }
 
 /* a wrapper on the SDL_Delay() call. The difference is that it reminds the last call, so it knows if there is still time to wait or ont. This allows to smooth out delays, providing accurate delaying across platforms.
@@ -905,6 +930,7 @@ int main(int argc, char **argv) {
   int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x, lastlevelleft;
   int nativetilesize, tilesize, playsolution, drawscreenflags;
   char *levelfile = NULL;
+  char *playsource = NULL;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
 
@@ -958,6 +984,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->nosolution, renderer, img_nosol_png, img_nosol_png_len);
   loadGraphic(&sprites->congrats, renderer, img_congrats_png, img_congrats_png_len);
   loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_png, img_copiedtoclipboard_png_len);
+  loadGraphic(&sprites->playfromclipboard, renderer, img_playfromclipboard_png, img_playfromclipboard_png_len);
   loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_png, img_snapshottoclipboard_png_len);
 
   /* load walls */
@@ -1201,15 +1228,28 @@ int main(int argc, char **argv) {
             break;
           case SDLK_v:
             if (SDL_GetModState() & KMOD_CTRL) {
-              /* dumplevel2clipboard(&game, states->history);
-              exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255); */
+              char *solFromClipboard;
+              solFromClipboard = SDL_GetClipboardText();
+              if (isLegalSokoSolution(solFromClipboard) != 0) {
+                  loadlevel(&game, gameslist[curlevel], states);
+                  exitflag = displaytexture(renderer, sprites->playfromclipboard, window, 2, DISPLAYCENTERED, 255);
+                  playsolution = 1;
+                  if (playsource != NULL) free(playsource);
+                  playsource = solFromClipboard;
+                } else {
+                  if (solFromClipboard != NULL) free(solFromClipboard);
+              }
             }
             break;
           case SDLK_s:
             if (playsolution == 0) {
               if (game.solution != NULL) { /* only allow if there actually is a solution */
-                  loadlevel(&game, gameslist[curlevel], states);
-                  playsolution = 1;
+                  if (playsource != NULL) free(playsource);
+                  playsource = strdup(game.solution); /* I duplicate the solution string, because I want to free it later, since it can originate both from the game's solution as well as from a clipboard string */
+                  if (playsource != NULL) {
+                    loadlevel(&game, gameslist[curlevel], states);
+                    playsolution = 1;
+                  }
                 } else {
                   exitflag = displaytexture(renderer, sprites->nosolution, window, 1, DISPLAYCENTERED, 255);
               }
@@ -1239,7 +1279,7 @@ int main(int argc, char **argv) {
         }
         if (playsolution > 0) {
           movedir = 0;
-          switch (game.solution[playsolution - 1]) {
+          switch (playsource[playsolution - 1]) {
             case 'u':
             case 'U':
               movedir = sokmoveUP;
@@ -1258,7 +1298,7 @@ int main(int argc, char **argv) {
               break;
           }
           playsolution += 1;
-          if (game.solution[playsolution - 1] == 0) playsolution = 0;
+          if (playsource[playsolution - 1] == 0) playsolution = 0;
         }
         if (movedir != 0) {
           rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, drawscreenflags);
@@ -1348,6 +1388,7 @@ int main(int argc, char **argv) {
   if (sprites->help) SDL_DestroyTexture(sprites->help);
   if (sprites->congrats) SDL_DestroyTexture(sprites->congrats);
   if (sprites->copiedtoclipboard) SDL_DestroyTexture(sprites->copiedtoclipboard);
+  if (sprites->playfromclipboard) SDL_DestroyTexture(sprites->playfromclipboard);
   if (sprites->snapshottoclipboard) SDL_DestroyTexture(sprites->snapshottoclipboard);
   for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
   for (x = 0; x < 4; x++) if (sprites->wallcaps[x]) SDL_DestroyTexture(sprites->wallcaps[x]);
