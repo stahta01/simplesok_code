@@ -126,6 +126,13 @@ static void sokDelay(unsigned int t) {
   lastelapsedtime -= t; /* remember how much remainder we have on wait time */
 }
 
+static int flush_events(void) {
+  SDL_Event event;
+  int exitflag = 0;
+  while (SDL_PollEvent(&event) != 0) if (event.type == SDL_QUIT) exitflag = 1;
+  return(exitflag);
+}
+
 static void switchfullscreen(SDL_Window *window) {
   static int fullscreenflag = 0;
   fullscreenflag ^= 1;
@@ -134,6 +141,8 @@ static void switchfullscreen(SDL_Window *window) {
     } else {
       SDL_SetWindowFullscreen(window, 0);
   }
+  SDL_Delay(50); /* wait for 50ms - the video threads needs some time to set things up */
+  flush_events(); /* going fullscreen fires some garbage events that I don't want to hear about */
 }
 
 static int char2fontid(char c) {
@@ -183,13 +192,6 @@ static int getoffsetv(struct sokgame *game, int winh, int tilesize) {
     return(res);
   }
   return(0);
-}
-
-static int flush_events() {
-  SDL_Event event;
-  int exitflag = 0;
-  while (SDL_PollEvent(&event) != 0) if (event.type == SDL_QUIT) exitflag = 1;
-  return(exitflag);
 }
 
 /* wait for a key up to timeout seconds (-1 = indefintely), while redrawing the renderer screen, if not null */
@@ -603,7 +605,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
           rect.y += 5;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
-      sokDelay(30); /* wait for 40ms */
+      sokDelay(30); /* wait for 30ms */
     }
     oldpusherposy = newpusherposy;
 
@@ -634,6 +636,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             break;
           case SDLK_F11:
             switchfullscreen(window);
+            oldpusherposy = -1; /* forget about pusher position, we have to recompute it */
             break;
           case SDLK_ESCAPE:
             return(NULL);
