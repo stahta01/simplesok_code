@@ -98,14 +98,14 @@ static void getsavedir(char *savedir, int maxlen) {
 }
 
 /* returns a malloc()'ed, null-terminated string with the solution to level levcrc32. if no solution available, returns NULL. */
-char *solution_load(unsigned long levcrc32) {
+char *solution_load(unsigned long levcrc32, char *ext) {
   char rootdir[4096], crcstr[16], *solution, *solutionfinal;
   int bytebuff, rlecounter;
   long solutionpos = 0, solution_alloc = 16;
   FILE *fd;
   getsavedir(rootdir, sizeof(rootdir));
   if (rootdir[0] == 0) return(NULL);
-  sprintf(crcstr, "%08lX.dat", levcrc32);
+  sprintf(crcstr, "%08lX.%s", levcrc32, ext);
   strcat(rootdir, crcstr);
   fd = fopen(rootdir, "rb");
   if (fd == NULL) return(NULL);
@@ -149,13 +149,13 @@ char *solution_load(unsigned long levcrc32) {
 }
 
 /* saves the solution for levcrc32 */
-void solution_save(unsigned long levcrc32, char *solution) {
+void solution_save(unsigned long levcrc32, char *solution, char *ext) {
   char rootdir[4096], crcstr[16];
   int curbyte, lastbyte = -1, lastbytecount = 0;
   FILE *fd;
   getsavedir(rootdir, sizeof(rootdir));
   if ((rootdir[0] == 0) || (solution == NULL)) return;
-  sprintf(crcstr, "%08lX.dat", levcrc32);
+  sprintf(crcstr, "%08lX.%s", levcrc32, ext);
   strcat(rootdir, crcstr);
   fd = fopen(rootdir, "wb");
   if (fd == NULL) return;

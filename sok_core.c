@@ -323,7 +323,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
 
     /* write the level num and load the solution (if any) */
     gamelist[level]->level = level + 1;
-    gamelist[level]->solution = solution_load(gamelist[level]->crc32);
+    gamelist[level]->solution = solution_load(gamelist[level]->crc32, "dat");
     /* if end of file reached, stop now */
     if (loadres > 0) break;
   }
@@ -342,7 +342,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
 void sok_loadsolutions(struct sokgame **gamelist, int levelscount) {
   int x = 0;
   for (x = 0; x < levelscount; x++) {
-    gamelist[x]->solution = solution_load(gamelist[x]->crc32);
+    gamelist[x]->solution = solution_load(gamelist[x]->crc32, "dat");
   }
 }
 
@@ -366,7 +366,7 @@ int sok_checksolution(struct sokgame *game, struct sokgamestates *states) {
   if (bestscorelen > myscorelen) betterflag = 1;
   if ((bestscorelen == myscorelen) && (bestscorepushes > myscorepushes)) betterflag = 1;
   /* if our solution is better, save it */
-  if (betterflag != 0) solution_save(game->crc32, states->history);
+  if (betterflag != 0) solution_save(game->crc32, states->history, "dat");
   return(1);
 }
 

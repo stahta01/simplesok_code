@@ -20,8 +20,13 @@
  */
 
 
+#ifndef save_h_sentinel
+#define save_h_sentinel
+
 /* saves the solution for levcrc32 */
-void solution_save(unsigned long levcrc32, char *solution);
+void solution_save(unsigned long levcrc32, char *solution, char *ext);
 
 /* returns a malloc()'ed, null-terminated string with the solution to level levcrc32. if no solution available, returns NULL. */
-char *solution_load(unsigned long levcrc32);
+char *solution_load(unsigned long levcrc32, char *ext);
+
+#endif
