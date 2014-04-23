@@ -90,4 +90,7 @@
   /* returns a human string for error code */
   char *sok_strerr(int errid);
 
+  /* plays a string of moves */
+  void sok_play(struct sokgame *game, struct sokgamestates *states, char *playfile);
+
 #endif

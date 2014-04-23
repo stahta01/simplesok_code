@@ -22,6 +22,7 @@
 #include <time.h>
 #include <SDL2/SDL.h>           /* SDL       */
 #include "sok_core.h"
+#include "save.h"
 #include "data_lev.h"           /* embedded image files */
 #include "data_img.h"           /* embedded level files */
 #include "data_fnt.h"           /* embedded font files */
@@ -74,6 +75,9 @@ struct spritesstruct {
   SDL_Texture *help;
   SDL_Texture *intro;
   SDL_Texture *player;
+  SDL_Texture *saved;
+  SDL_Texture *loaded;
+  SDL_Texture *nosave;
   SDL_Texture *solved;
   SDL_Texture *walls[16];
   SDL_Texture *wallcaps[4];
@@ -980,6 +984,9 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->copiedtoclipboard, renderer, img_copiedtoclipboard_bmp_gz, img_copiedtoclipboard_bmp_gz_len);
   loadGraphic(&sprites->playfromclipboard, renderer, img_playfromclipboard_bmp_gz, img_playfromclipboard_bmp_gz_len);
   loadGraphic(&sprites->snapshottoclipboard, renderer, img_snapshottoclipboard_bmp_gz, img_snapshottoclipboard_bmp_gz_len);
+  loadGraphic(&sprites->saved, renderer, img_saved_bmp_gz, img_saved_bmp_gz_len);
+  loadGraphic(&sprites->loaded, renderer, img_loaded_bmp_gz, img_loaded_bmp_gz_len);
+  loadGraphic(&sprites->nosave, renderer, img_nosave_bmp_gz, img_nosave_bmp_gz_len);
 
   /* load walls */
   for (x = 0; x < 16; x++) sprites->walls[x] = NULL;
@@ -1212,7 +1219,7 @@ int main(int argc, char **argv) {
             playsolution = 0;
             loadlevel(&game, gameslist[curlevel], states);
             break;
-          case SDLK_F5: /* dump level & solution (if any) to clipboard */
+          case SDLK_F3: /* dump level & solution (if any) to clipboard */
             dumplevel2clipboard(gameslist[curlevel], gameslist[curlevel]->solution);
             exitflag = displaytexture(renderer, sprites->copiedtoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
@@ -1264,6 +1271,27 @@ int main(int argc, char **argv) {
                 drawscreenflags |= DRAWSCREEN_NOBG;
               } else {
                 drawscreenflags |= DRAWSCREEN_NOTXT;
+            }
+            break;
+          case SDLK_F5:
+            if (playsolution == 0) {
+              exitflag = displaytexture(renderer, sprites->saved, window, 1, DISPLAYCENTERED, 255);
+              solution_save(game.crc32, states->history, "sav");
+            }
+            break;
+          case SDLK_F7:
+            {
+            char *loadsol;
+            loadsol = solution_load(game.crc32, "sav");
+            if (loadsol == NULL) {
+                exitflag = displaytexture(renderer, sprites->nosave, window, 1, DISPLAYCENTERED, 255);
+              } else {
+                exitflag = displaytexture(renderer, sprites->loaded, window, 1, DISPLAYCENTERED, 255);
+                playsolution = 0;
+                loadlevel(&game, gameslist[curlevel], states);
+                sok_play(&game, states, loadsol);
+                free(loadsol);
+            }
             }
             break;
           case SDLK_F11:
@@ -1388,6 +1416,9 @@ int main(int argc, char **argv) {
   if (sprites->copiedtoclipboard) SDL_DestroyTexture(sprites->copiedtoclipboard);
   if (sprites->playfromclipboard) SDL_DestroyTexture(sprites->playfromclipboard);
   if (sprites->snapshottoclipboard) SDL_DestroyTexture(sprites->snapshottoclipboard);
+  if (sprites->saved) SDL_DestroyTexture(sprites->saved);
+  if (sprites->loaded) SDL_DestroyTexture(sprites->loaded);
+  if (sprites->nosave) SDL_DestroyTexture(sprites->nosave);
   for (x = 0; x < 16; x++) if (sprites->walls[x]) SDL_DestroyTexture(sprites->walls[x]);
   for (x = 0; x < 4; x++) if (sprites->wallcaps[x]) SDL_DestroyTexture(sprites->wallcaps[x]);
   for (x = 0; x < 128; x++) if (sprites->font[x]) SDL_DestroyTexture(sprites->font[x]);

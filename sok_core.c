@@ -497,3 +497,33 @@ void sok_undo(struct sokgame *game, struct sokgamestates *states) {
   game->positiony += movey;
   states->history[movescount] = 0;
 }
+
+void sok_play(struct sokgame *game, struct sokgamestates *states, char *playfile) {
+  if (playfile == NULL) return;
+  while (*playfile != 0) {
+    enum SOKMOVE playmove;
+    switch (*playfile) {
+      case 'u':
+      case 'U':
+        playmove = sokmoveUP;
+        break;
+      case 'r':
+      case 'R':
+        playmove = sokmoveRIGHT;
+        break;
+      case 'd':
+      case 'D':
+        playmove = sokmoveDOWN;
+        break;
+      case 'l':
+      case 'L':
+        playmove = sokmoveLEFT;
+        break;
+      default:
+        playmove = sokmoveLEFT;
+        break;
+    }
+    sok_move(game, playmove, 0, states);
+    playfile += 1;
+  }
+}
