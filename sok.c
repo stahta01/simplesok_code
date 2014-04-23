@@ -703,6 +703,18 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
   }
 }
 
+static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture) {
+  int alphaval, exitflag = 0;
+  sokDelay(0);  /* init my delay timer */
+  for (alphaval = 0; alphaval < 64; alphaval += 3) {
+    exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
+    if (exitflag != 0) break;
+    sokDelay(30);  /* wait for 30ms */
+  }
+  if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
+  return(exitflag);
+}
+
 static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment, int levelscount, int selection) {
   int i, winw, winh, maxallowedlevel;
   char levelnum[64];
@@ -827,23 +839,12 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
             switchfullscreen(window);
             break;
           case SDLK_ESCAPE:
+            fade2texture(renderer, window, sprites->black);
             return(SELECTLEVEL_BACK);
             break;
         }
     }
   }
-}
-
-static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture) {
-  int alphaval, exitflag = 0;
-  sokDelay(0);  /* init my delay timer */
-  for (alphaval = 0; alphaval < 64; alphaval += 3) {
-    exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
-    if (exitflag != 0) break;
-    sokDelay(30);  /* wait for 30ms */
-  }
-  if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
-  return(exitflag);
 }
 
 /* sets the icon in the aplication's title bar */
@@ -1120,6 +1121,7 @@ int main(int argc, char **argv) {
     wait_for_a_key(-1, renderer);
     exitflag = 1;
   }
+  if (exitflag == 0) fade2texture(renderer, window, sprites->black);
 
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
@@ -1138,6 +1140,7 @@ int main(int argc, char **argv) {
     }
     if (curlevel == SELECTLEVEL_QUIT) exitflag = 1;
   }
+  if (exitflag == 0) fade2texture(renderer, window, sprites->black);
   if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
 
   if ((curlevel == 0) && (game.solution == NULL)) showhelp = 1;
@@ -1264,6 +1267,7 @@ int main(int argc, char **argv) {
             switchfullscreen(window);
             break;
           case SDLK_ESCAPE:
+            fade2texture(renderer, window, sprites->black);
             goto LevelSelectMenu;
             break;
         }
