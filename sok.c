@@ -281,7 +281,7 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
   }
 }
 
-int getWallCap(struct sokgame *game, int x, int y, SDL_Rect *dstrect, SDL_Rect *orgrect, int checknum) {
+static int getWallCap(struct sokgame *game, int x, int y, SDL_Rect *dstrect, SDL_Rect *orgrect, int checknum) {
   switch (checknum) {
     case 0: /* top left corner */
       dstrect->w = orgrect->w >> 1;
@@ -703,22 +703,23 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
   }
 }
 
-static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment, int levelscount) {
-  int i, selection, winw, winh, maxallowedlevel;
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment, int levelscount, int selection) {
+  int i, winw, winh, maxallowedlevel;
   char levelnum[64];
   SDL_Event event;
   /* reload all solutions for levels, in case they changed (for ex. because we just solved a level..) */
   sok_loadsolutions(gameslist, levelscount);
 
-  /* Preselect the first unsolved level */
-  selection = 0;
-  for (i = 0; i < levelscount; i++) {
-    if (gameslist[i]->solution != NULL) {
-        if (debugmode != 0) printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
-      } else {
-        if (debugmode != 0) printf("Level %d [%08lX] has NO solution\n", i + 1, gameslist[i]->crc32);
-        selection = i;
-        break;
+  /* if no current level is selected, then preselect the first unsolved level */
+  if (selection < 0) {
+    for (i = 0; i < levelscount; i++) {
+      if (gameslist[i]->solution != NULL) {
+          if (debugmode != 0) printf("Level %d [%08lX] has solution: %s\n", i + 1, gameslist[i]->crc32, gameslist[i]->solution);
+        } else {
+          if (debugmode != 0) printf("Level %d [%08lX] has NO solution\n", i + 1, gameslist[i]->crc32);
+          selection = i;
+          break;
+      }
     }
   }
 
@@ -921,7 +922,7 @@ int main(int argc, char **argv) {
   struct sokgamestates *states;
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
-  int levelscount, curlevel = 0, exitflag = 0, showhelp = 0, x, lastlevelleft;
+  int levelscount, curlevel = -1, exitflag = 0, showhelp = 0, x, lastlevelleft;
   int nativetilesize, tilesize, playsolution, drawscreenflags;
   char *levelfile = NULL;
   char *playsource = NULL;
@@ -1127,7 +1128,7 @@ int main(int argc, char **argv) {
   if (exitflag == 0) exitflag = flush_events();
 
   if (exitflag == 0) {
-    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount);
+    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount, curlevel);
     if (curlevel == SELECTLEVEL_BACK) {
       if (levelfile == NULL) {
           goto GametypeSelectMenu;
@@ -1351,6 +1352,7 @@ int main(int argc, char **argv) {
               }
             }
             /* load the new level and reset states */
+            curlevel = -1; /* this will make the selectlevel() function to preselect the next level automatically */
             goto LevelSelectMenu;
           }
         }
