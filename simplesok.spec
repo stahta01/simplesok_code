@@ -16,7 +16,7 @@
 #
 
 Name: simplesok
-Version: 1.0
+Version: 1.0.1
 Release: 1%{?dist}
 Summary: Simple Sokoban is a (simple) Sokoban game aimed for playability and portability across systems.
 
@@ -45,19 +45,19 @@ make
 
 %install
 install -D simplesok %buildroot/%{_bindir}/simplesok
-mkdir -p %buildroot/%_datadir/apps/%{name}/icons/hicolor/48x48/apps
-install -D simplesok.png %buildroot/%_datadir/apps/%{name}/icons/hicolor/48x48/apps/
+mkdir -p %buildroot/usr/share/icons/hicolor/48x48/apps/
+install -D simplesok.png %buildroot/usr/share/icons/hicolor/48x48/apps/
 
 %files
-%dir %_datadir/apps/
-%dir %_datadir/apps/%{name}/
-%dir %_datadir/apps/%{name}/icons/
-%dir %_datadir/apps/%{name}/icons/hicolor/
-%dir %_datadir/apps/%{name}/icons/hicolor/48x48/
-%dir %_datadir/apps/%{name}/icons/hicolor/48x48/apps
+%dir /usr/
+%dir /usr/share/
+%dir /usr/share/icons/
+%dir /usr/share/icons/hicolor/
+%dir /usr/share/icons/hicolor/48x48/
+%dir /usr/share/icons/hicolor/48x48/apps
 %attr(644, root, root) %doc simplesok.txt license.txt history.txt
 %attr(755, root, root) %{_bindir}/simplesok
-%attr(644, root, root) %_datadir/apps/%{name}/icons/hicolor/48x48/apps/simplesok.png
+%attr(644, root, root) /usr/share/icons/hicolor/48x48/apps/simplesok.png
 
 %changelog
 * Mon Apr 15 2014 Mateusz Viste <mateusz@viste-family.net> 1.0
