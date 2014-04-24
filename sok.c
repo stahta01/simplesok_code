@@ -145,7 +145,7 @@ static void switchfullscreen(SDL_Window *window) {
     } else {
       SDL_SetWindowFullscreen(window, 0);
   }
-  SDL_Delay(50); /* wait for 50ms - the video threads needs some time to set things up */
+  SDL_Delay(50); /* wait for 50ms - the video thread needs some time to set things up */
   flush_events(); /* going fullscreen fires some garbage events that I don't want to hear about */
 }
 
@@ -576,7 +576,7 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
 static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize, char **levelfile) {
   int exitflag, winw, winh;
   static int selection = 0;
-  int oldpusherposy = -1, newpusherposy, x;
+  int oldpusherposy = 0, newpusherposy, x, selectionchangeflag = 0;
   unsigned char *memptr[3] = {levels_microban_xsb, levels_sasquatch_xsb, levels_sasquatch3_xsb};
   char *levname[3] = {"Easy (Microban)", "Normal (Sasquatch)", "Hard (Sasquatch III)"};
   int textvadj = 12;
@@ -590,7 +590,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     newpusherposy = winh * 0.63 + winh * 0.08 * selection;
     rect.w = tilesize;
     rect.h = tilesize;
-    if (oldpusherposy < 0) oldpusherposy = newpusherposy;
+    if (selectionchangeflag == 0) oldpusherposy = newpusherposy;
     /* draw the screen */
     rect.y = oldpusherposy;
     sokDelay(0); /* init my delay timer */
@@ -612,6 +612,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       sokDelay(30); /* wait for 30ms */
     }
     oldpusherposy = newpusherposy;
+    selectionchangeflag = 0;
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) if ((SDL_WaitEvent(&event) != 0) && (event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
@@ -629,10 +630,12 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
           case SDLK_UP:
           case SDLK_KP_8:
             selection--;
+            selectionchangeflag = 1;
             break;
           case SDLK_DOWN:
           case SDLK_KP_2:
             selection++;
+            selectionchangeflag = 1;
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
@@ -640,7 +643,6 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             break;
           case SDLK_F11:
             switchfullscreen(window);
-            oldpusherposy = -1; /* forget about pusher position, we have to recompute it */
             break;
           case SDLK_ESCAPE:
             return(NULL);
