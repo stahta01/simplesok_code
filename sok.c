@@ -754,6 +754,9 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     }
   }
 
+  /* if no unsolved level found, then select the first one */
+  selection = 0;
+
   /* compute the last allowed level */
   i = 0; /* i will temporarily store the number of unsolved levels */
   for (maxallowedlevel = 0; maxallowedlevel < levelscount; maxallowedlevel++) {
