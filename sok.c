@@ -577,7 +577,7 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
 
 /* waits for the user to choose a game type or to load an external xsb file and returns either a pointer to a memory chunk with xsb data or to fill levelfile with a filename */
 static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, int tilesize, char **levelfile) {
-  int exitflag, winw, winh;
+  int exitflag, winw, winh, stringw, stringh, longeststringw;
   static int selection = 0;
   int oldpusherposy = 0, newpusherposy, x, selectionchangeflag = 0;
   unsigned char *memptr[3] = {levels_microban_xsb, levels_sasquatch_xsb, levels_sasquatch3_xsb};
@@ -586,10 +586,17 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   SDL_Event event;
   SDL_Rect rect;
 
+  /* compute the pixel width of the longest string in the menu */
+  longeststringw = 0;
+  for (x = 0; x < 3; x++) {
+    get_string_size(levname[x], sprites, &stringw, &stringh);
+    if (stringw > longeststringw) longeststringw = stringw;
+  }
+
   for (;;) {
     SDL_GetWindowSize(window, &winw, &winh);
     /* compute the dst rect of the pusher */
-    rect.x = winw * 0.23;
+    rect.x = ((winw - longeststringw) >> 1) - 54;
     newpusherposy = winh * 0.63 + winh * 0.08 * selection;
     rect.w = tilesize;
     rect.h = tilesize;
@@ -606,13 +613,13 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       SDL_RenderPresent(renderer);
       if (rect.y == newpusherposy) break;
       if (newpusherposy < oldpusherposy) {
-          rect.y -= 5;
+          rect.y -= 6;
           if (rect.y < newpusherposy) rect.y = newpusherposy;
         } else {
-          rect.y += 5;
+          rect.y += 6;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
-      sokDelay(14); /* wait for 14ms */
+      sokDelay(16); /* wait for 16ms */
     }
     oldpusherposy = newpusherposy;
     selectionchangeflag = 0;
