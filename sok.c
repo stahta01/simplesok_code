@@ -291,33 +291,50 @@ static void draw_string(char *string, struct spritesstruct *sprites, SDL_Rendere
 }
 
 static int getWallCap(struct sokgame *game, int x, int y, SDL_Rect *dstrect, SDL_Rect *orgrect, int checknum) {
+  enum {
+    TOPLEFT = 0,
+    TOPRIGHT = 1,
+    BOTTOMLEFT = 2,
+    BOTTOMRIGHT = 3
+  };
+  int width[4];
+  int height[4];
+  /* precompute width and height of every quarter of the 2x2 quad set */
+  width[TOPLEFT]      = orgrect->w >> 1;
+  width[TOPRIGHT]     = orgrect->w - width[TOPLEFT];
+  width[BOTTOMLEFT]   = orgrect->w >> 1;
+  width[BOTTOMRIGHT]  = orgrect->w - width[BOTTOMLEFT];
+  height[TOPLEFT]     = orgrect->h >> 1;
+  height[TOPRIGHT]    = orgrect->h >> 1;
+  height[BOTTOMLEFT]  = orgrect->h - height[TOPLEFT];
+  height[BOTTOMRIGHT] = orgrect->h - height[TOPRIGHT];
+  /* initialize x/y position to the position of the top left corner */
+  dstrect->x = orgrect->x;
+  dstrect->y = orgrect->y;
+  /* adjust */
   switch (checknum) {
-    case 0: /* top left corner */
-      dstrect->w = orgrect->w >> 1;
-      dstrect->h = orgrect->h >> 1;
-      dstrect->x = orgrect->x;
-      dstrect->y = orgrect->y;
+    case TOPLEFT: /* top left corner */
+      dstrect->w = width[TOPLEFT];
+      dstrect->h = height[TOPLEFT];
       if ((x > 0) && (y > 0) && (game->field[x - 1][y] & game->field[x][y - 1] & game->field[x - 1][y - 1] & field_wall)) return(1);
       return(0);
-    case 1: /* top right corner */
-      dstrect->w = orgrect->w - (orgrect->w >> 1);
-      dstrect->h = orgrect->h >> 1;
-      dstrect->x = orgrect->x + dstrect->w;
-      dstrect->y = orgrect->y;
+    case TOPRIGHT: /* top right corner */
+      dstrect->w = width[TOPRIGHT];
+      dstrect->h = height[TOPRIGHT];
+      dstrect->x += width[TOPLEFT];
       if ((y > 0) && (game->field[x + 1][y] & game->field[x][y - 1] & game->field[x + 1][y - 1] & field_wall)) return(1);
       return(0);
-    case 2: /* bottom left corner */
-      dstrect->w = orgrect->w >> 1;
-      dstrect->h = orgrect->h - (orgrect->h >> 1);
-      dstrect->x = orgrect->x;
-      dstrect->y = orgrect->y + dstrect->h;
+    case BOTTOMLEFT: /* bottom left corner */
+      dstrect->w = width[BOTTOMLEFT];
+      dstrect->h = height[BOTTOMLEFT];
+      dstrect->y += height[TOPLEFT];
       if ((x > 0) && (game->field[x - 1][y] & game->field[x][y + 1] & game->field[x - 1][y + 1] & field_wall)) return(1);
       return(0);
-    case 3: /* bottom right corner */
-      dstrect->w = orgrect->w - (orgrect->w >> 1);
-      dstrect->h = orgrect->h - (orgrect->h >> 1);
-      dstrect->x = orgrect->x + dstrect->w;
-      dstrect->y = orgrect->y + dstrect->h;
+    case BOTTOMRIGHT: /* bottom right corner */
+      dstrect->w = width[BOTTOMRIGHT];
+      dstrect->h = height[BOTTOMRIGHT];
+      dstrect->x += width[TOPRIGHT];
+      dstrect->y += height[TOPRIGHT];
       if ((game->field[x + 1][y] & game->field[x][y + 1] & game->field[x + 1][y + 1] & field_wall)) return(1);
       return(0);
   }
@@ -544,7 +561,7 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
       if (tmpangle >= 360) tmpangle = 0;
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
-      if (tmpangle % 12 == 0) { /* turn 12 degress at a time */
+      if (tmpangle % 13 == 0) { /* turn 13 degress at a time */
         draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
         sokDelay(16); /* wait for 16ms */
       }
@@ -613,10 +630,10 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       SDL_RenderPresent(renderer);
       if (rect.y == newpusherposy) break;
       if (newpusherposy < oldpusherposy) {
-          rect.y -= 6;
+          rect.y -= 7;
           if (rect.y < newpusherposy) rect.y = newpusherposy;
         } else {
-          rect.y += 6;
+          rect.y += 7;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
       sokDelay(16); /* wait for 16ms */
@@ -755,7 +772,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
   }
 
   /* if no unsolved level found, then select the first one */
-  selection = 0;
+  if (selection < 0) selection = 0;
 
   /* compute the last allowed level */
   i = 0; /* i will temporarily store the number of unsolved levels */
@@ -1345,7 +1362,7 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
-            int modulator = tilesize / 8;
+            int modulator = tilesize / 6;
             if (modulator < 2) modulator = 2;
             if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
