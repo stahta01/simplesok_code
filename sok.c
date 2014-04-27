@@ -51,6 +51,9 @@
 #define DRAWSTRING_RIGHT -2
 #define DRAWSTRING_BOTTOM -3
 
+#define DRAWPLAYFIELDTILE_DRAWATOM 1
+#define DRAWPLAYFIELDTILE_PUSH 2
+
 #define BLIT_LEVELMAP_BACKGROUND 1
 
 #define FONT_SPACE_WIDTH 12
@@ -351,10 +354,7 @@ static int getwallid(struct sokgame *game, int x, int y) {
   return(res);
 }
 
-#define DRAWPLAYFIELDTILE_DRAWATOM 1
-#define DRAWPLAYFIELDTILE_PUSH 2
-
-static void draw_playfield_tile(struct sokgame *game, int x, int y, struct spritesstruct *sprites, SDL_Renderer *renderer, int winw, int winh, int tilesize, int flags, int moveoffsetx, int moveoffsety) {
+static void draw_playfield_tile(struct sokgame *game, int x, int y, struct spritesstruct *sprites, SDL_Renderer *renderer, int winw, int winh, int nativetilesize, int tilesize, int flags, int moveoffsetx, int moveoffsety) {
   SDL_Rect rect;
   int i;
   /* compute the dst rect */
@@ -367,8 +367,12 @@ static void draw_playfield_tile(struct sokgame *game, int x, int y, struct sprit
       if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
       if (game->field[x][y] & field_goal) SDL_RenderCopy(renderer, sprites->goal, NULL, &rect);
       if (game->field[x][y] & field_wall) {
-        SDL_Rect dstrect;
-        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
+        SDL_Rect srcrect, dstrect;
+        srcrect.x = 2;
+        srcrect.y = 2;
+        srcrect.w = nativetilesize - 2;
+        srcrect.h = nativetilesize - 2;
+        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], &srcrect, &rect);
         /* draw the wall element (in 4 times, to draw caps when necessary) */
         for (i = 0; i < 4; i++) {
           if (getWallCap(game, x, y, &dstrect, &rect, i) != 0) {
@@ -425,7 +429,7 @@ static int loadGraphic(SDL_Texture **texture, SDL_Renderer *renderer, void *memp
   return(res);
 }
 
-static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, int moveoffsetx, int moveoffsety, int scrolling, int flags, char *levelname) {
+static void draw_screen(struct sokgame *game, struct sokgamestates *states, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int nativetilesize, int tilesize, int moveoffsetx, int moveoffsety, int scrolling, int flags, char *levelname) {
   int x, y, winw, winh, offx, offy;
   /* int partialoffsetx = 0, partialoffsety = 0; */
   char stringbuff[256];
@@ -462,9 +466,9 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   for (y = 0; y < game->field_height; y++) {
     for (x = 0; x < game->field_width; x++) {
       if (scrolling != 0) {
-          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, drawtile_flags, -moveoffsetx, -moveoffsety);
+          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, nativetilesize, tilesize, drawtile_flags, -moveoffsetx, -moveoffsety);
         } else {
-          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, drawtile_flags, 0, 0);
+          draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, nativetilesize, tilesize, drawtile_flags, 0, 0);
       }
     }
   }
@@ -486,7 +490,7 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
           if ((moveoffsety > 0) && (y == game->positiony + 1) && (x == game->positionx)) offy = scrollingadjy;
           if ((moveoffsety < 0) && (y == game->positiony - 1) && (x == game->positionx)) offy = scrollingadjy;
       }
-      draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, tilesize, DRAWPLAYFIELDTILE_DRAWATOM, offx, offy);
+      draw_playfield_tile(game, x, y, sprites, renderer, winw, winh, nativetilesize, tilesize, DRAWPLAYFIELDTILE_DRAWATOM, offx, offy);
     }
   }
   /* draw where the player is */
@@ -513,7 +517,7 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   if (flags & DRAWSCREEN_REFRESH) SDL_RenderPresent(renderer);
 }
 
-static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levelname, int drawscreenflags) {
+static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, struct sokgamestates *states, enum SOKMOVE dir, SDL_Renderer *renderer, SDL_Window *window, int nativetilesize, int tilesize, char *levelname, int drawscreenflags) {
   int srcangle = states->angle;
   int dstangle = 0, dirmotion, winw, winh;
   SDL_GetWindowSize(window, &winw, &winh);
@@ -562,7 +566,7 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
       if (tmpangle % 13 == 0) { /* turn 13 degress at a time */
-        draw_screen(game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
+        draw_screen(game, states, sprites, renderer, window, nativetilesize, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
         sokDelay(16); /* wait for 16ms */
       }
       if (tmpangle == dstangle) break;
@@ -683,9 +687,9 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
 }
 
 /* blit a level preview */
-static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int tilesize, int alpha, int flags) {
+static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, int xpos, int ypos, SDL_Renderer *renderer, int nativetilesize, int tilesize, int alpha, int flags) {
   int x, y, bgpadding = tilesize * 3;
-  SDL_Rect rect, bgrect;
+  SDL_Rect rect, bgrect, srcrect;
   rect.w = tilesize;
   rect.h = tilesize;
   bgrect.x = xpos - (game->field_width * tilesize + bgpadding) / 2;
@@ -705,12 +709,17 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
       rect.y = ypos + (tilesize * y) - (game->field_height * tilesize) / 2;
       rect.w = tilesize;
       rect.h = tilesize;
+      /* trim out 4 pixels on every wall tile */
+      srcrect.x = 2;
+      srcrect.y = 2;
+      srcrect.w = nativetilesize - 2;
+      srcrect.h = nativetilesize - 2;
       /* draw the tile */
       if (game->field[x][y] & field_floor) SDL_RenderCopy(renderer, sprites->floor, NULL, &rect);
       if (game->field[x][y] & field_wall) {
         int i;
         SDL_Rect dstrect;
-        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], NULL, &rect);
+        SDL_RenderCopy(renderer, sprites->walls[getwallid(game, x, y)], &srcrect, &rect);
         /* check for neighbors and draw wall cap if needed */
         for (i = 0; i < 4; i++) {
           if (getWallCap(game, x, y, &dstrect, &rect, i) != 0) {
@@ -751,7 +760,7 @@ static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture 
   return(exitflag);
 }
 
-static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int tilesize, char *levcomment, int levelscount, int selection) {
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, int nativetilesize, int tilesize, char *levcomment, int levelscount, int selection) {
   int i, winw, winh, maxallowedlevel;
   char levelnum[64];
   SDL_Event event;
@@ -788,32 +797,32 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* draw the screen */
     SDL_RenderClear(renderer);
     if (selection > 0) { /* draw the level before */
-      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, tilesize / 4, 96, 0);
+      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, nativetilesize, tilesize / 4, 96, 0);
       if (gameslist[selection - 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
         rect.x = winw / 5 - rect.w / 2;
-        rect.y = winh / 2 - rect.h / 2;
+        rect.y = (winh - rect.h) / 2;
         SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
       }
     }
     if (selection + 1 < maxallowedlevel) { /* draw the level after */
-      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, tilesize / 4, 96, 0);
+      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, nativetilesize, tilesize / 4, 96, 0);
       if (gameslist[selection + 1]->solution != NULL) {
         SDL_Rect rect;
         SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
         rect.x = winw * 4 / 5 - rect.w / 2;
-        rect.y = winh / 2 - rect.h / 2;
+        rect.y = (winh - rect.h) / 2;
         SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
       }
     }
     /* draw the selected level */
-    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, tilesize / 3, 210, BLIT_LEVELMAP_BACKGROUND);
+    blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, nativetilesize, tilesize / 3, 210, BLIT_LEVELMAP_BACKGROUND);
     if (gameslist[selection]->solution != NULL) {
       SDL_Rect rect;
       SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
-      rect.x = winw / 2 - rect.w / 2;
-      rect.y = winh / 2 - rect.h / 2;
+      rect.x = (winw - rect.w) / 2;
+      rect.y = (winh - rect.h) / 2;
       SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
     }
     draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 8, window);
@@ -981,7 +990,7 @@ int main(int argc, char **argv) {
     printf("SDL_Init() failed: %s\n", SDL_GetError());
     return(1);
   }
-  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");  /* this makes scaling nicer (use linear scaling instead of raw pixels) */
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");  /* this makes scaling nicer */
 
   window = SDL_CreateWindow("Simple Sokoban " PVER, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_DEFAULT_WIDTH, SCREEN_DEFAULT_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (window == NULL) {
@@ -1172,7 +1181,7 @@ int main(int argc, char **argv) {
   if (exitflag == 0) exitflag = flush_events();
 
   if (exitflag == 0) {
-    curlevel = selectlevel(gameslist, sprites, renderer, window, tilesize, levcomment, levelscount, curlevel);
+    curlevel = selectlevel(gameslist, sprites, renderer, window, nativetilesize, tilesize, levcomment, levelscount, curlevel);
     if (curlevel == SELECTLEVEL_BACK) {
       if (levelfile == NULL) {
           goto GametypeSelectMenu;
@@ -1196,10 +1205,10 @@ int main(int argc, char **argv) {
       } else {
         drawscreenflags &= ~DRAWSCREEN_PLAYBACK;
     }
-    draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
+    draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
     if (showhelp != 0) {
       exitflag = displaytexture(renderer, sprites->help, window, -1, DISPLAYCENTERED, 255);
-      draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
+      draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
       showhelp = 0;
     }
     if (debugmode != 0) printf("history: %s\n", states->history);
@@ -1358,7 +1367,7 @@ int main(int argc, char **argv) {
           if (playsource[playsolution - 1] == 0) playsolution = 0;
         }
         if (movedir != 0) {
-          rotatePlayer(sprites, &game, states, movedir, renderer, window, tilesize, levcomment, drawscreenflags);
+          rotatePlayer(sprites, &game, states, movedir, renderer, window, nativetilesize, tilesize, levcomment, drawscreenflags);
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
@@ -1376,14 +1385,14 @@ int main(int argc, char **argv) {
               if (offset % modulator == 0) {
                 sokDelay(18);  /* wait 18ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
             for (offset = 0; offset != tilesize * offsety; offset += offsety) {
               if (offset % modulator == 0) {
                 sokDelay(18);  /* wait 18ms */
                 scrolling = scrollneeded(&game, window, tilesize, offsetx, offsety);
-                draw_screen(&game, states, sprites, renderer, window, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
+                draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
             }
           }
@@ -1399,13 +1408,13 @@ int main(int argc, char **argv) {
             }
             flush_events();
             for (alphaval = 0; alphaval < 255; alphaval += 30) {
-              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, 0, 0, 0, 0, levcomment);
               exitflag = displaytexture(renderer, tmptex, window, 0, DISPLAYCENTERED, alphaval);
               SDL_Delay(25);
               if (exitflag != 0) break;
             }
             if (exitflag == 0) {
-              draw_screen(&game, states, sprites, renderer, window, tilesize, 0, 0, 0, 0, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, nativetilesize, tilesize, 0, 0, 0, 0, levcomment);
               /* if this was the last level left, display a congrats screen */
               if (lastlevelleft != 0) {
                   exitflag = displaytexture(renderer, sprites->congrats, window, 10, DISPLAYCENTERED, 255);
