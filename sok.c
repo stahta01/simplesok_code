@@ -61,6 +61,7 @@
 
 #define SELECTLEVEL_BACK -1
 #define SELECTLEVEL_QUIT -2
+#define SELECTLEVEL_LOADFILE -3
 
 struct spritesstruct {
   SDL_Texture *atom;
@@ -602,6 +603,14 @@ static void loadlevel(struct sokgame *togame, struct sokgame *fromgame, struct s
   sok_resetstates(states);
 }
 
+static char *processDropFileEvent(SDL_Event *event, char **levelfile) {
+  if (event->type != SDL_DROPFILE) return(NULL);
+  if (event->drop.file == NULL) return(NULL);
+  if (*levelfile != NULL) free(*levelfile);
+  *levelfile = strdup(event->drop.file);
+  return(*levelfile);
+}
+
 /* waits for the user to choose a game type or to load an external xsb file and returns either a pointer to a memory chunk with xsb data or to fill levelfile with a filename */
 static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, struct videosettings *settings, char **levelfile) {
   int exitflag, winw, winh, stringw, stringh, longeststringw;
@@ -658,10 +667,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     if (event.type == SDL_QUIT) {
         return(NULL);
       } else if (event.type == SDL_DROPFILE) {
-        if (event.drop.file != NULL) {
-          *levelfile = event.drop.file;
-          return(NULL);
-        }
+        if (processDropFileEvent(&event, levelfile) != NULL) return(NULL);
       } else if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
           case SDLK_UP:
@@ -766,7 +772,7 @@ static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture 
   return(exitflag);
 }
 
-static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, struct videosettings *settings, char *levcomment, int levelscount, int selection) {
+static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites, SDL_Renderer *renderer, SDL_Window *window, struct videosettings *settings, char *levcomment, int levelscount, int selection, char **levelfile) {
   int i, winw, winh, maxallowedlevel;
   char levelnum[64];
   SDL_Event event;
@@ -843,6 +849,11 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* check what event we got */
     if (event.type == SDL_QUIT) {
         return(SELECTLEVEL_QUIT);
+      } else if (event.type == SDL_DROPFILE) {
+        if (processDropFileEvent(&event, levelfile) != NULL) {
+          fade2texture(renderer, window, sprites->black);
+          return(SELECTLEVEL_LOADFILE);
+        }
       } else if (event.type == SDL_KEYDOWN) {
         switch (event.key.keysym.sym) {
           case SDLK_LEFT:
@@ -977,7 +988,7 @@ int main(int argc, char **argv) {
   struct sokgamestates *states;
   struct spritesstruct spritesdata;
   struct spritesstruct *sprites = &spritesdata;
-  int levelscount, curlevel = -1, exitflag = 0, showhelp = 0, x, lastlevelleft;
+  int levelscount, curlevel, exitflag = 0, showhelp = 0, x, lastlevelleft;
   int playsolution, drawscreenflags;
   char *levelfile = NULL;
   char *playsource = NULL;
@@ -1155,7 +1166,7 @@ int main(int argc, char **argv) {
       if (strstr(argv[i], "--framedelay=") == argv[i]) {
           settings.framedelay = atoi(argv[i] + strlen("--framedelay="));
         } else if (levelfile == NULL) { /* else assume it is a level file */
-          levelfile = argv[i];
+          levelfile = strdup(argv[i]);
       }
     }
   }
@@ -1173,6 +1184,7 @@ int main(int argc, char **argv) {
   if (states == NULL) return(1);
 
   GametypeSelectMenu:
+  curlevel = -1;
   levelscount = -1;
   settings.tilesize = settings.nativetilesize;
   if (levelfile != NULL) {
@@ -1203,15 +1215,18 @@ int main(int argc, char **argv) {
   if (exitflag == 0) exitflag = flush_events();
 
   if (exitflag == 0) {
-    curlevel = selectlevel(gameslist, sprites, renderer, window, &settings, levcomment, levelscount, curlevel);
+    curlevel = selectlevel(gameslist, sprites, renderer, window, &settings, levcomment, levelscount, curlevel, &levelfile);
     if (curlevel == SELECTLEVEL_BACK) {
-      if (levelfile == NULL) {
-          goto GametypeSelectMenu;
-        } else {
-          exitflag = 1;
-      }
+        if (levelfile == NULL) {
+            goto GametypeSelectMenu;
+          } else {
+            exitflag = 1;
+        }
+      } else if (curlevel == SELECTLEVEL_QUIT) {
+        exitflag = 1;
+      } else if (curlevel == SELECTLEVEL_LOADFILE) {
+        goto GametypeSelectMenu;
     }
-    if (curlevel == SELECTLEVEL_QUIT) exitflag = 1;
   }
   if (exitflag == 0) fade2texture(renderer, window, sprites->black);
   if (exitflag == 0) loadlevel(&game, gameslist[curlevel], states);
@@ -1251,6 +1266,11 @@ int main(int argc, char **argv) {
     /* check what event we got */
     if (event.type == SDL_QUIT) {
         exitflag = 1;
+      } else if (event.type == SDL_DROPFILE) {
+        if (processDropFileEvent(&event, &levelfile) != NULL) {
+          fade2texture(renderer, window, sprites->black);
+          goto GametypeSelectMenu;
+        }
       } else if (event.type == SDL_KEYDOWN) {
         int res = 0, movedir = 0;
         switch (event.key.keysym.sym) {
@@ -1465,6 +1485,8 @@ int main(int argc, char **argv) {
 
   /* free the states struct */
   sok_freestates(states);
+
+  if (levelfile != NULL) free(levelfile);
 
   /* free all textures */
   if (sprites->atom) SDL_DestroyTexture(sprites->atom);

@@ -1,8 +1,8 @@
 
-    ***  Simple Sokoban  ***
-http://simplesok.sourceforge.net/
+                        ***  Simple Sokoban  ***
+                    http://simplesok.sourceforge.net/
 
-Copyright (C) Mateusz Viste 2014
+                    Copyright (C) Mateusz Viste 2014
 
 
 Simple Sokoban is a (simple) Sokoban game aimed at playability and portability
@@ -30,6 +30,14 @@ The source code is released under GNU GPL v3. Read the 'license.txt' file
 shipped with the game for details.
 
 
+[ Loading external level files ]
+
+Simple Sokoban can load levels from external *.xsb files. There are two ways
+to load such file: either pass it as a parameter on command line, or drop the
+file to the Simple Sokoban application window. Note, that the second method
+will work only if your windowing system supports it.
+
+
 [ Command line parameters ]
 
 Simple Sokoban accepts some command-line parameters. If a parameter is not
@@ -38,7 +46,7 @@ path to a XSB level file.
 
 --framedelay=X      Adjusts the delay between frames to X ms. Use it if you'd
                     like to make Simple Sokoban slower/faster. The default
-                    value is 18. The value must be in the range 0..64.
+                    value is 18. This value must be in the range 0..64.
 
 
 [ Credits ]
