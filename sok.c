@@ -544,12 +544,12 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
   /* figure out how to compute the shortest way to rotate the player... This is not a very efficient way, but it works.. I might improve it in the future... */
   if (srcangle != dstangle) {
     int tmpangle, stepsright = 0, stepsleft = 0;
-    for (tmpangle = srcangle; ; tmpangle++) {
+    for (tmpangle = srcangle; ; tmpangle += 90) {
       if (tmpangle >= 360) tmpangle -= 360;
       stepsright += 1;
       if (tmpangle == dstangle) break;
     }
-    for (tmpangle = srcangle; ; tmpangle--) {
+    for (tmpangle = srcangle; ; tmpangle -= 90) {
       if (tmpangle < 0) tmpangle += 360;
       stepsleft += 1;
       if (tmpangle == dstangle) break;
