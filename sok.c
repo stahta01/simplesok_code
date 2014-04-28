@@ -586,7 +586,7 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
       if (tmpangle >= 360) tmpangle = 0;
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
-      if (tmpangle % 16 == 0) { /* turn 16 degress at a time */
+      if (tmpangle % 8 == 0) { /* turn 8 degress at a time */
         draw_screen(game, states, sprites, renderer, window, settings, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
         sokDelay(settings->framedelay); /* wait for x ms */
       }
@@ -663,10 +663,10 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       SDL_RenderPresent(renderer);
       if (rect.y == newpusherposy) break;
       if (newpusherposy < oldpusherposy) {
-          rect.y -= 8;
+          rect.y -= 4;
           if (rect.y < newpusherposy) rect.y = newpusherposy;
         } else {
-          rect.y += 8;
+          rect.y += 4;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
       sokDelay(settings->framedelay); /* wait for x ms */
@@ -1186,7 +1186,7 @@ int main(int argc, char **argv) {
   }
 
   /* validate parameters */
-  if ((settings.framedelay < 0) || (settings.framedelay > 64)) settings.framedelay = 18;
+  if ((settings.framedelay < 0) || (settings.framedelay > 64)) settings.framedelay = 9;
 
   gameslist = malloc(sizeof(struct sokgame *) * MAXLEVELS);
   if (gameslist == NULL) {
@@ -1430,7 +1430,7 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
-            int modulator = settings.tilesize / 6;
+            int modulator = settings.tilesize / 12;
             if (modulator < 2) modulator = 2;
             if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
