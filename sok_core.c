@@ -24,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 #include "crc32.h"
+#include "gz.h"
 #include "save.h"
 #include "sok_core.h"
 
@@ -111,23 +112,21 @@ void sok_freefile(struct sokgame **gamelist, int gamescount) {
 }
 
 /* reads a byte from memory of from a file, whichever is passed as a parameter */
-static int readbytefromfileormem(FILE *fd, unsigned char **memptr) {
+static int readbytefrommem(unsigned char **memptr) {
   int result = -1;
-  if (fd != NULL) {
-      result = getc(fd);
-    } else if (memptr != NULL) {
-      result = **memptr;
-      *memptr += 1;
-      if (result == 0) result = -1;
+  if (memptr != NULL) {
+    result = **memptr;
+    *memptr += 1;
+    if (result == 0) result = -1;
   }
   return(result);
 }
 
 /* reads a single RLE chunk from file fd, fills bytebuff with the actual data byte and returns the amount of times it should be repeated. returns -1 on error (like end of file). */
-static int readRLEbyte(FILE *fd, unsigned char **memptr, int *bytebuff) {
+static int readRLEbyte(unsigned char **memptr, int *bytebuff) {
   int rleprefix = -1;
   for (;;) { /* RLE support */
-      *bytebuff = readbytefromfileormem(fd, memptr);
+      *bytebuff = readbytefrommem(memptr);
       if (*bytebuff < 0) return(-1);
       if ((*bytebuff >= '0') && (*bytebuff <= '9')) {
         if (rleprefix > 0) {
@@ -157,7 +156,7 @@ static void floodFillField(struct sokgame *game, int x, int y) {
 
 
 /* loads the next level from open file fd. returns 0 on success, 1 on success with end of file reached, or -1 on error. */
-static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **memptr, char *comment, int maxcommentlen) {
+static int loadlevelfromfile(struct sokgame *game, unsigned char **memptr, char *comment, int maxcommentlen) {
   int leveldatastarted = 0, endoffile = 0;
   int x, y, bytebuff;
   int commentfound = 0;
@@ -181,7 +180,7 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
 
   for (;;) {
     int rleprefix;
-    rleprefix = readRLEbyte(fd, memptr, &bytebuff);
+    rleprefix = readRLEbyte(memptr, &bytebuff);
     if (rleprefix < 0) endoffile = 1;
     if (endoffile != 0) break;
     for (; rleprefix > 0; rleprefix--) {
@@ -226,7 +225,7 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
           if (leveldatastarted != 0) leveldatastarted = -1;
           if ((commentfound == 0) && (comment != NULL)) commentfound = -1;
           for (;;) {
-            bytebuff = readbytefromfileormem(fd, memptr);
+            bytebuff = readbytefrommem(memptr);
             if (bytebuff == '\r') continue;
             if (bytebuff == '\n') break;
             if (bytebuff < 0) {
@@ -288,14 +287,43 @@ static int loadlevelfromfile(struct sokgame *game, FILE *fd, unsigned char **mem
   return(0);
 }
 
+/* loads a file to memory. returns the file size on success, -1 otherwise. */
+static long loadfile2mem(char *file, unsigned char **memptr) {
+  long filesize;
+  FILE *fd;
+  *memptr = NULL;
+  fd = fopen(file, "rb");
+  if (fd == NULL) return(-1);
+  /* get file size */
+  fseek(fd, 0, SEEK_END);
+  filesize = ftell(fd);
+  if (filesize <= 0) return(-1);
+  rewind(fd);
+  /* allocate mem */
+  *memptr = malloc(filesize + 1); /* +1 because I always want to add a NULL terminator at the end */
+  if (*memptr == NULL) return(-1);
+  (*memptr)[filesize] = 0;
+  /* load file to mem */
+  if (fread(*memptr, 1, filesize, fd) != (unsigned long)filesize) {
+    fclose(fd);
+    free(*memptr);
+    *memptr = NULL;
+    return(-1);
+  }
+  fclose(fd);
+  return(filesize);
+}
+
 /* load levels from a file, and put them into an array of up to maxlevels levels */
 int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsigned char *memptr, char *comment, int maxcommentlen) {
-  FILE *fd = NULL;
   int level, loadres, errflag = 0;
+  long filelen = 0;
+  unsigned char *allocptr = NULL;
   if (gamelevel != NULL) {
-    fd = fopen(gamelevel, "r");
-    if (fd == NULL) return(ERR_UNABLE_TO_OPEN_FILE);
+    filelen = loadfile2mem(gamelevel, &allocptr);
+    memptr = allocptr;
   }
+  if ((filelen < 0) || (memptr == NULL)) return(ERR_UNABLE_TO_OPEN_FILE);
 
   for (level = 0;; level++) { /* iterate to load games sequentially from the file */
     /* puts("loading level.."); */
@@ -312,7 +340,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     }
 
     /* call loadlevelfromfile */
-    loadres = loadlevelfromfile(gamelist[level], fd, &memptr, (level == 0) ? comment : NULL, maxcommentlen);
+    loadres = loadlevelfromfile(gamelist[level], &memptr, (level == 0) ? comment : NULL, maxcommentlen);
 
     if (loadres < 0) { /* error loading level data */
       if (level == 0) errflag = loadres;
@@ -328,7 +356,7 @@ int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsi
     if (loadres > 0) break;
   }
 
-  if (fd != NULL) fclose(fd);
+  if (allocptr != NULL) free(allocptr);
 
   if (errflag != 0) {
     sok_freefile(gamelist, level + 1);
