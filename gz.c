@@ -13,6 +13,43 @@
 #define GZ_FLAG_FILE_COMMENT_PRESENT 16
 #define GZ_FLAG_FILE_IS_ENCRYPTED 32
 
+/* tests a memory chunk to see if it contains valid GZ or not. returns 1 if the GZ seems legit. 0 otherwise. */
+int isGz(unsigned char *memgz, long memgzlen) {
+  int gzpos = 0, flags = 0;
+  if (memgzlen < 16) return(0); /* must be at least 16 bytes long */
+  if ((memgz[gzpos++] != 0x1F) || (memgz[gzpos++] != 0x8B)) return(0); /* check magic sig */
+  if (memgz[memgzlen - 4] + memgz[memgzlen - 3] + memgz[memgzlen - 2] + memgz[memgzlen - 1] == 0) return(0); /* uncompressed file's len must be > 0 */
+  if ((memgz[gzpos] != 0) && (memgz[gzpos++] != 8)) return(0);  /* compression method should be 'store' (0) or 'deflate' (8) */
+  flags = memgz[gzpos++]; /* load flags (1 byte) */
+  gzpos += 6; /* Discard the file modification timestamp (4 bytes), the extra flags (1 byte) as well as OS type (1 byte) */
+  /* skip the extra field (if present) */
+  if (flags & GZ_FLAG_EXTRA_FIELD_PRESENT) {
+    int extrafieldlen;
+    /* load the length of the extra field (2 bytes) */
+    extrafieldlen = memgz[gzpos++];
+    extrafieldlen <<= 8;
+    extrafieldlen |= memgz[gzpos++];
+    /* skip the extra field */
+    gzpos += extrafieldlen;
+  }
+  /* skip the filename, if present (null terminated string) */
+  if (flags & GZ_FLAG_ORIG_FILENAME_PRESENT) {
+    for (;;) {
+      if (gzpos >= memgzlen) return(0);
+      if (memgz[gzpos++] == 0) break;
+    }
+  }
+  /* skip the file comment, if present (null terminated string) */
+  if (flags & GZ_FLAG_FILE_COMMENT_PRESENT) {
+    for (;;) {
+      if (gzpos >= memgzlen) return(0);
+      if (memgz[gzpos++] == 0) break;
+    }
+  }
+  /* seems legit */
+  return(1);
+}
+
 /* decompress a gz file in memory. returns a pointer to a newly allocated memory chunk (holding uncompressed data), or NULL on error. */
 unsigned char *ungz(unsigned char *memgz, long memgzlen, long *resultlen) {
   #define buffinsize 64 * 1024   /* the input buffer must be at least 32K, because that's the (usual) dic size in deflate, apparently */

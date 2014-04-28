@@ -106,6 +106,7 @@ static SDL_Surface *loadgzbmp(unsigned char *memgz, long memgzlen) {
   SDL_Surface *surface;
   unsigned char *rawimage;
   long rawimagelen;
+  if (isGz(memgz, memgzlen) == 0) return(NULL);
   rawimage = ungz(memgz, memgzlen, &rawimagelen);
   rwop = SDL_RWFromMem(rawimage, rawimagelen);
   surface = SDL_LoadBMP_RW(rwop, 0);
