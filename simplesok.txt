@@ -47,7 +47,7 @@ path to a XSB level file.
 
 --framedelay=X      Adjusts the delay between frames to X ms. Use it if you'd
                     like to make Simple Sokoban slower/faster. The default
-                    value is 18. This value must be in the range 0..64.
+                    value is 9. This value must be in the range 0..64.
 
 
 [ Credits ]
