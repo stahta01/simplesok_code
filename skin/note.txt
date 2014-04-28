@@ -1,0 +1,1 @@
+all walls textures are 4 pixels wider and higher than other textures. This is because they are cut out later by the renderer engine. The fact that such cutting is needed is because of texture bleeding that occurs if we try to scale a non-cut texture.
