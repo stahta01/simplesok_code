@@ -36,6 +36,7 @@ Simple Sokoban can load levels from external *.xsb files. There are two ways
 to load such file: either pass it as a parameter on command line, or drop the
 file to the Simple Sokoban application window. Note, that the second method
 will work only if your windowing system supports it.
+Simple Sokoban is also able to load gzipped xsb files.
 
 
 [ Command line parameters ]

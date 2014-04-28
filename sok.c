@@ -627,15 +627,21 @@ static char *processDropFileEvent(SDL_Event *event, char **levelfile) {
 }
 
 /* waits for the user to choose a game type or to load an external xsb file and returns either a pointer to a memory chunk with xsb data or to fill levelfile with a filename */
-static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, struct videosettings *settings, char **levelfile) {
+static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruct *sprites, SDL_Window *window, struct videosettings *settings, char **levelfile, long *levelfilelen) {
   int exitflag, winw, winh, stringw, stringh, longeststringw;
   static int selection = 0;
   int oldpusherposy = 0, newpusherposy, x, selectionchangeflag = 0;
-  unsigned char *memptr[3] = {levels_microban_xsb, levels_sasquatch_xsb, levels_sasquatch3_xsb};
+  unsigned char *memptr[3] = {levels_microban_xsb_gz, levels_sasquatch_xsb_gz, levels_sasquatch3_xsb_gz};
+  long memptrlen[3];
   char *levname[3] = {"Easy (Microban)", "Normal (Sasquatch)", "Hard (Sasquatch III)"};
   int textvadj = 12;
   SDL_Event event;
   SDL_Rect rect;
+
+  *levelfilelen = 0;
+  memptrlen[0] = levels_microban_xsb_gz_len;
+  memptrlen[1] = levels_sasquatch_xsb_gz_len;
+  memptrlen[2] = levels_sasquatch3_xsb_gz_len;
 
   /* compute the pixel width of the longest string in the menu */
   longeststringw = 0;
@@ -697,6 +703,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
+            *levelfilelen = memptrlen[selection];
             return(memptr[selection]);
             break;
           case SDLK_F11:
@@ -1203,14 +1210,15 @@ int main(int argc, char **argv) {
   levelscount = -1;
   settings.tilesize = settings.nativetilesize;
   if (levelfile != NULL) {
-      levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, levcomment, LEVCOMMENTMAXLEN);
+      levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, 0, levcomment, LEVCOMMENTMAXLEN);
     } else {
       unsigned char *xsblevelptr;
-      xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile);
+      long xsblevelptrlen;
+      xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile, &xsblevelptrlen);
       if ((xsblevelptr == NULL) && (levelfile == NULL)) {
           exitflag = 1;
         } else {
-          levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, xsblevelptr, levcomment, LEVCOMMENTMAXLEN);
+          levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, xsblevelptr, xsblevelptrlen, levcomment, LEVCOMMENTMAXLEN);
       }
   }
 

@@ -315,15 +315,26 @@ static long loadfile2mem(char *file, unsigned char **memptr) {
 }
 
 /* load levels from a file, and put them into an array of up to maxlevels levels */
-int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsigned char *memptr, char *comment, int maxcommentlen) {
+int sok_loadfile(struct sokgame **gamelist, int maxlevels, char *gamelevel, unsigned char *memptr, long filelen, char *comment, int maxcommentlen) {
   int level, loadres, errflag = 0;
-  long filelen = 0;
   unsigned char *allocptr = NULL;
   if (gamelevel != NULL) {
     filelen = loadfile2mem(gamelevel, &allocptr);
     memptr = allocptr;
   }
   if ((filelen < 0) || (memptr == NULL)) return(ERR_UNABLE_TO_OPEN_FILE);
+
+  /* if the level is gziped, uncompress it now */
+  if (isGz(memptr, filelen)) {
+    char unsigned *ungzptr;
+    long uncompressedlen;
+    ungzptr = ungz(memptr, filelen, &uncompressedlen);
+    filelen = uncompressedlen;
+    if (allocptr != NULL) free(allocptr);
+    allocptr = ungzptr;
+    memptr = ungzptr;
+    if (ungzptr == NULL) return(ERR_UNABLE_TO_OPEN_FILE);
+  }
 
   for (level = 0;; level++) { /* iterate to load games sequentially from the file */
     /* puts("loading level.."); */

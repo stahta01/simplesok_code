@@ -45,7 +45,9 @@ data_skn.h: skin/*.png file2c zopfli
 
 data_lev.h: levels/*.xsb file2c zopfli
 	echo "/* This file is part of the sok project. */" > data_lev.h
-	for x in levels/*.xsb ; do ./file2c $$x >> data_lev.h ; done
+	for x in levels/*.xsb ; do ./zopfli $$x ; done
+	for x in levels/*.xsb.gz ; do ./file2c $$x >> data_lev.h ; done
+	rm levels/*.xsb.gz
 
 data_fnt.h: font/*.png file2c zopfli
 	echo "/* This file is part of the sok project. */" > data_fnt.h

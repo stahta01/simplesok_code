@@ -56,7 +56,7 @@
   #define sokmove_solved 4
 
   /* loads a level file. returns the amount of levels loaded on success, a non-positive value otherwise. */
-  int sok_loadfile(struct sokgame **game, int maxlevels, char *gamelevel, unsigned char *memptr, char *comment, int maxcommentlen);
+  int sok_loadfile(struct sokgame **game, int maxlevels, char *gamelevel, unsigned char *memptr, long filelen, char *comment, int maxcommentlen);
 
   void sok_freefile(struct sokgame **gamelist, int gamescount);
 
