@@ -92,6 +92,7 @@ struct videosettings {
   int tilesize;
   int nativetilesize;
   int framedelay;
+  int framefreq;
 };
 
 /* returns the absolute value of the 'i' integer. */
@@ -140,22 +141,32 @@ static int isLegalSokoSolution(char *solstr) {
 }
 
 /* a wrapper on the SDL_Delay() call. The difference is that it reminds the last call, so it knows if there is still time to wait or ont. This allows to smooth out delays, providing accurate delaying across platforms.
- * Usage: first call it with a '0' parameter to initialize the timer, and then feed it with t miliseconds as many times as needed. */
-static void sokDelay(unsigned int t) {
-  static Uint32 timetowait = 0, starttime = 0;
+ * Usage: first call it with a '0' parameter to initialize the timer, and then feed it with t microseconds as many times as needed. */
+static int sokDelay(long t) {
+  static Uint32 timetowait = 0, starttime = 0, irq = 0, irqfreq = 0;
+  int res = 0;
   Uint32 curtime = 0;
-  if (t == 0) {
+  if (t <= 0) {
       starttime = SDL_GetTicks();
       timetowait = 0;
+      irq = 0;
+      irqfreq = 0 - t;
+      t = 0;
     } else {
       timetowait += t;
+      irq += t;
+      if (irq >= irqfreq) {
+        irq -= irqfreq;
+        res = 1;
+      }
   }
   for (;;) {
     curtime = SDL_GetTicks();
     if (starttime > curtime + 1000) break; /* the SDL_GetTicks() wraps after 49 days */
-    if (curtime - starttime >= timetowait) break;
-    SDL_Delay(2);
+    if (curtime - starttime >= timetowait / 1000) break;
+    SDL_Delay(1);
   }
+  return(res);
 }
 
 static int flush_events(void) {
@@ -582,14 +593,13 @@ static int rotatePlayer(struct spritesstruct *sprites, struct sokgame *game, str
         }
     }
     /* perform the rotation */
-    sokDelay(0); /* init my delay timer */
+    sokDelay(0 - settings->framefreq); /* init my delay timer */
     for (tmpangle = srcangle; ; tmpangle += dirmotion) {
       if (tmpangle >= 360) tmpangle = 0;
       if (tmpangle < 0) tmpangle = 359;
       states->angle = tmpangle;
-      if (tmpangle % 8 == 0) { /* turn 8 degress at a time */
+      if (sokDelay(settings->framedelay / 8)) { /* wait for x ms */
         draw_screen(game, states, sprites, renderer, window, settings, 0, 0, 0, DRAWSCREEN_REFRESH | drawscreenflags, levelname);
-        sokDelay(settings->framedelay); /* wait for x ms */
       }
       if (tmpangle == dstangle) break;
     }
@@ -651,6 +661,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   }
 
   for (;;) {
+    int refreshnow = 1;
     SDL_GetWindowSize(window, &winw, &winh);
     /* compute the dst rect of the pusher */
     rect.x = ((winw - longeststringw) >> 1) - 54;
@@ -660,23 +671,25 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
     if (selectionchangeflag == 0) oldpusherposy = newpusherposy;
     /* draw the screen */
     rect.y = oldpusherposy;
-    sokDelay(0); /* init my delay timer */
+    sokDelay(0 - settings->framefreq); /* init my delay timer */
     for (;;) {
-      displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
-      SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
-      for (x = 0; x < 3; x++) {
-        draw_string(levname[x], sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * x, window);
+      if (refreshnow) { /* wait for x ms */
+        displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
+        SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
+        for (x = 0; x < 3; x++) {
+          draw_string(levname[x], sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * x, window);
+        }
+        SDL_RenderPresent(renderer);
+        if (rect.y == newpusherposy) break;
       }
-      SDL_RenderPresent(renderer);
-      if (rect.y == newpusherposy) break;
       if (newpusherposy < oldpusherposy) {
-          rect.y -= 4;
+          rect.y -= 1;
           if (rect.y < newpusherposy) rect.y = newpusherposy;
         } else {
-          rect.y += 4;
+          rect.y += 1;
           if (rect.y > newpusherposy) rect.y = newpusherposy;
       }
-      sokDelay(settings->framedelay); /* wait for x ms */
+      refreshnow = sokDelay(settings->framedelay / 4);
     }
     oldpusherposy = newpusherposy;
     selectionchangeflag = 0;
@@ -788,7 +801,7 @@ static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture 
   for (alphaval = 0; alphaval < 64; alphaval += 4) {
     exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
     if (exitflag != 0) break;
-    sokDelay(16);  /* wait for 16ms */
+    sokDelay(16 * 1000);  /* wait for 16ms */
   }
   if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
   return(exitflag);
@@ -1049,6 +1062,7 @@ int main(int argc, char **argv) {
   }
 
   settings.framedelay = -1;
+  settings.framefreq = -1;
 
   /* Load sprites */
   loadGraphic(&sprites->atom, renderer, skin_atom_bmp_gz, skin_atom_bmp_gz_len);
@@ -1187,6 +1201,8 @@ int main(int argc, char **argv) {
     for (i = 1 ; i < argc ; i++) {
       if (strstr(argv[i], "--framedelay=") == argv[i]) {
           settings.framedelay = atoi(argv[i] + strlen("--framedelay="));
+        } else if (strstr(argv[i], "--framefreq=") == argv[i]) {
+          settings.framefreq = atoi(argv[i] + strlen("--framefreq="));
         } else if (levelfile == NULL) { /* else assume it is a level file */
           levelfile = strdup(argv[i]);
       }
@@ -1194,7 +1210,8 @@ int main(int argc, char **argv) {
   }
 
   /* validate parameters */
-  if ((settings.framedelay < 0) || (settings.framedelay > 64)) settings.framedelay = 9;
+  if ((settings.framedelay < 0) || (settings.framedelay > 64000)) settings.framedelay = 12000;
+  if ((settings.framefreq < 1) || (settings.framefreq > 1000000)) settings.framefreq = 15000;
 
   gameslist = malloc(sizeof(struct sokgame *) * MAXLEVELS);
   if (gameslist == NULL) {
@@ -1439,29 +1456,30 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
-            int modulator = settings.tilesize / 12;
-            if (modulator < 2) modulator = 2;
+            int divisor, refreshnow = 1;
+            divisor = settings.tilesize / 12;
+            if (divisor < 1) divisor = 1;
             if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
             if (movedir == sokmoveUP) offsety = -1;
             if (movedir == sokmoveRIGHT) offsetx = 1;
             if (movedir == sokmoveDOWN) offsety = 1;
             if (movedir == sokmoveLEFT) offsetx = -1;
-            sokDelay(0);  /* init my delay timer */
+            sokDelay(0 - settings.framefreq);  /* init my delay timer */
             /* Will I need to move the player, or the entire field? */
             for (offset = 0; offset != settings.tilesize * offsetx; offset += offsetx) {
-              if (offset % modulator == 0) {
-                sokDelay(settings.framedelay);  /* wait x ms */
+              if (refreshnow) {
                 scrolling = scrollneeded(&game, window, settings.tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, &settings, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
+              refreshnow = sokDelay(settings.framedelay / divisor); /* wait a moment and check if it's time to refresh */
             }
             for (offset = 0; offset != settings.tilesize * offsety; offset += offsety) {
-              if (offset % modulator == 0) {
-                sokDelay(settings.framedelay);  /* wait x ms */
+              if (refreshnow) {
                 scrolling = scrollneeded(&game, window, settings.tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, &settings, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
+              refreshnow = sokDelay(settings.framedelay / divisor); /* wait a moment and check if it's time to refresh */
             }
           }
           res = sok_move(&game, movedir, 0, states);

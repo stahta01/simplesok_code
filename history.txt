@@ -12,7 +12,7 @@
   - added support for pasting moves from clipboard (CTRL+V),
   - replaced PNG files by bmp.gz - similar efficiency, but without creating ugly dependencies with SDL2_image, libpng and libz,
   - added save/load feature (F5/F7) & dumping level key binding moved to F3,
-  - added the --framedelay=X command-line parameter to tune the game's speed,
+  - added the --framedelay=X and --framefreq=X command-line parameters to tune the game's speed,
   - added support for loading gzipped *.xsb files,
   - ...
 
