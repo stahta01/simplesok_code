@@ -28,7 +28,7 @@
 #include "data_fnt.h"           /* embedded font files */
 #include "data_skn.h"           /* embedded skin files */
 #include "data_ico.h"           /* embedded the icon file */
-#include "gzbmp.h"
+#include "gz.h"
 
 #define PVER "v1.0.1 beta"
 
@@ -98,6 +98,20 @@ struct videosettings {
 static int absval(int i) {
   if (i < 0) return(-i);
   return(i);
+}
+
+/* loads a gziped bmp image from memory and returns a surface */
+static SDL_Surface *loadgzbmp(unsigned char *memgz, long memgzlen) {
+  SDL_RWops *rwop;
+  SDL_Surface *surface;
+  unsigned char *rawimage;
+  long rawimagelen;
+  rawimage = ungz(memgz, memgzlen, &rawimagelen);
+  rwop = SDL_RWFromMem(rawimage, rawimagelen);
+  surface = SDL_LoadBMP_RW(rwop, 0);
+  SDL_FreeRW(rwop);
+  free(rawimage);
+  return(surface);
 }
 
 /* returns 0 if string is not a legal solution. non-zero otherwise. */

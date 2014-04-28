@@ -3,9 +3,8 @@
  * Copyright (C) Mateusz Viste 2014
  */
 
-#include <SDL2/SDL.h>
 #include "tinfl.c"
-#include "gzbmp.h" /* include self for control */
+#include "gz.h" /* include self for control */
 
 #define GZ_FLAG_ASCII 1
 #define GZ_FLAG_MULTIPART_CONTINUTATION 2
@@ -15,7 +14,7 @@
 #define GZ_FLAG_FILE_IS_ENCRYPTED 32
 
 /* decompress a gz file in memory. returns a pointer to a newly allocated memory chunk (holding uncompressed data), or NULL on error. */
-static unsigned char *ungz(unsigned char *memgz, long memgzlen, long *resultlen) {
+unsigned char *ungz(unsigned char *memgz, long memgzlen, long *resultlen) {
   #define buffinsize 64 * 1024   /* the input buffer must be at least 32K, because that's the (usual) dic size in deflate, apparently */
   #define buffoutsize 256 * 1024 /* it's better for the output buffer to be significantly larger than the input buffer (we are decompressing here, remember? */
   unsigned char *buffout;
@@ -164,19 +163,4 @@ static unsigned char *ungz(unsigned char *memgz, long memgzlen, long *resultlen)
 
   *resultlen = filelen;
   return(result);
-}
-
-
-/* loads an img image from memory and returns a surface */
-SDL_Surface *loadgzbmp(unsigned char *memgz, long memgzlen) {
-  SDL_RWops *rwop;
-  SDL_Surface *surface;
-  unsigned char *rawimage;
-  long rawimagelen;
-  rawimage = ungz(memgz, memgzlen, &rawimagelen);
-  rwop = SDL_RWFromMem(rawimage, rawimagelen);
-  surface = SDL_LoadBMP_RW(rwop, 0);
-  SDL_FreeRW(rwop);
-  free(rawimage);
-  return(surface);
 }
