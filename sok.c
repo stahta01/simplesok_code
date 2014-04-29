@@ -1210,7 +1210,7 @@ int main(int argc, char **argv) {
   }
 
   /* validate parameters */
-  if ((settings.framedelay < 0) || (settings.framedelay > 64000)) settings.framedelay = 12000;
+  if ((settings.framedelay < 0) || (settings.framedelay > 64000)) settings.framedelay = 10500;
   if ((settings.framefreq < 1) || (settings.framefreq > 1000000)) settings.framefreq = 15000;
 
   gameslist = malloc(sizeof(struct sokgame *) * MAXLEVELS);
