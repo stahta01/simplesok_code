@@ -1480,13 +1480,13 @@ int main(int argc, char **argv) {
             }
             flush_events();
             for (alphaval = 0; alphaval < 255; alphaval += 30) {
-              draw_screen(&game, states, sprites, renderer, window, &settings, 0, 0, 0, 0, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, &settings, 0, 0, 0, drawscreenflags, levcomment);
               exitflag = displaytexture(renderer, tmptex, window, 0, DISPLAYCENTERED, alphaval);
               SDL_Delay(25);
               if (exitflag != 0) break;
             }
             if (exitflag == 0) {
-              draw_screen(&game, states, sprites, renderer, window, &settings, 0, 0, 0, 0, levcomment);
+              draw_screen(&game, states, sprites, renderer, window, &settings, 0, 0, 0, drawscreenflags, levcomment);
               /* if this was the last level left, display a congrats screen */
               if (lastlevelleft != 0) {
                   exitflag = displaytexture(renderer, sprites->congrats, window, 10, DISPLAYCENTERED, 255);
