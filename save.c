@@ -126,24 +126,33 @@ char *solution_load(unsigned long levcrc32, char *ext) {
         solution = realloc(solution, solution_alloc);
         if (solution == NULL) {
           printf("realloc() failed for %ld bytes: %s\n", solution_alloc, strerror(errno));
-          return(NULL);
+          solution = NULL;
+          break;
         }
       }
       /* add one position to the solution and decrement the rle counter */
       solution[solutionpos] = byte2xsb(bytebuff);
       if (solution[solutionpos] == '!') { /* if corrupted solution, free it and return nothing */
         free(solution);
-        return(NULL);
+        solution = NULL;
+        break;
       }
       solutionpos += 1;
       solution[solutionpos] = 0;
       rlecounter -= 1;
     }
+    if (solution == NULL) break; /* break out on error */
   }
 
+  /* close the file descriptor */
+  fclose(fd);
+
   /* strdup() the solution to make sure we use the least possible amount of memory */
-  solutionfinal = strdup(solution);
-  free(solution);
+  solutionfinal = NULL;
+  if (solution != NULL) {
+    solutionfinal = strdup(solution);
+    free(solution);
+  }
   /* return the solution string */
   return(solutionfinal);
 }
