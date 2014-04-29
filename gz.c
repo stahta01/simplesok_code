@@ -124,8 +124,9 @@ unsigned char *ungz(unsigned char *memgz, long memgzlen, long *resultlen) {
   compressedfilelen = memgzlen - (gzpos + 8);
 
   /* allocate memory for uncompressed content */
-  result = malloc(filelen);
+  result = malloc(filelen + 1);
   if (result == NULL) return(NULL);  /* failed to open the dst file */
+  result[filelen] = 0; /* finish the last byte with zero. just in case. */
 
   /* start reading and uncompressing the compressed data, computing CRC32 at the same time */
   if (compmethod == 0) { /* if the file is stored, copy it over */
