@@ -1444,9 +1444,7 @@ int main(int argc, char **argv) {
           res = sok_move(&game, movedir, 1, states);
           if (res >= 0) { /* do animations */
             int offset, offsetx = 0, offsety = 0, scrolling;
-            int divisor, refreshnow = 1;
-            divisor = settings.tilesize / 12;
-            if (divisor < 1) divisor = 1;
+            int refreshnow = 1;
             if (res & sokmove_pushed) drawscreenflags |= DRAWSCREEN_PUSH;
             /* How will I need to move? */
             if (movedir == sokmoveUP) offsety = -1;
@@ -1460,14 +1458,14 @@ int main(int argc, char **argv) {
                 scrolling = scrollneeded(&game, window, settings.tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, &settings, offset, 0, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
-              refreshnow = sokDelay(settings.framedelay / divisor); /* wait a moment and check if it's time to refresh */
+              refreshnow = sokDelay((settings.framedelay * 12) / settings.tilesize); /* wait a moment and check if it's time to refresh */
             }
             for (offset = 0; offset != settings.tilesize * offsety; offset += offsety) {
               if (refreshnow) {
                 scrolling = scrollneeded(&game, window, settings.tilesize, offsetx, offsety);
                 draw_screen(&game, states, sprites, renderer, window, &settings, 0, offset, scrolling, DRAWSCREEN_REFRESH | drawscreenflags, levcomment);
               }
-              refreshnow = sokDelay(settings.framedelay / divisor); /* wait a moment and check if it's time to refresh */
+              refreshnow = sokDelay((settings.framedelay * 12) / settings.tilesize); /* wait a moment and check if it's time to refresh */
             }
           }
           res = sok_move(&game, movedir, 0, states);
