@@ -793,6 +793,16 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
     SDL_RenderDrawRect(renderer, &bgrect);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
+  /* if level is solved, draw a 'complete' tag */
+  if (game->solution != NULL) {
+    /* SDL_Rect rect; */
+    SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
+    rect.w = 1.5 * (rect.w * tilesize) / nativetilesize;
+    rect.h = 1.5 * (rect.h * tilesize) / nativetilesize;
+    rect.x = xpos - (rect.w / 2);
+    rect.y = ypos - (rect.h / 2);
+    SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
+  }
 }
 
 static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture) {
@@ -843,35 +853,13 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
 
     /* draw the screen */
     SDL_RenderClear(renderer);
-    if (selection > 0) { /* draw the level before */
-      blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, settings->nativetilesize, settings->tilesize / 4, 96, 0);
-      if (gameslist[selection - 1]->solution != NULL) {
-        SDL_Rect rect;
-        SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
-        rect.x = winw / 5 - rect.w / 2;
-        rect.y = (winh - rect.h) / 2;
-        SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
-      }
-    }
-    if (selection + 1 < maxallowedlevel) { /* draw the level after */
-      blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, settings->nativetilesize, settings->tilesize / 4, 96, 0);
-      if (gameslist[selection + 1]->solution != NULL) {
-        SDL_Rect rect;
-        SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
-        rect.x = winw * 4 / 5 - rect.w / 2;
-        rect.y = (winh - rect.h) / 2;
-        SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
-      }
-    }
+    /* draw the level before */
+    if (selection > 0) blit_levelmap(gameslist[selection - 1], sprites, winw / 5, winh / 2, renderer, settings->nativetilesize, settings->tilesize / 4, 96, 0);
+    /* draw the level after */
+    if (selection + 1 < maxallowedlevel) blit_levelmap(gameslist[selection + 1], sprites, winw * 4 / 5,  winh / 2, renderer, settings->nativetilesize, settings->tilesize / 4, 96, 0);
     /* draw the selected level */
     blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, settings->nativetilesize, settings->tilesize / 3, 210, BLIT_LEVELMAP_BACKGROUND);
-    if (gameslist[selection]->solution != NULL) {
-      SDL_Rect rect;
-      SDL_QueryTexture(sprites->solved, NULL, NULL, &rect.w, &rect.h);
-      rect.x = (winw - rect.w) / 2;
-      rect.y = (winh - rect.h) / 2;
-      SDL_RenderCopy(renderer, sprites->solved, NULL, &rect);
-    }
+    /* draw strings, etc */
     draw_string(levcomment, sprites, renderer, DRAWSTRING_CENTER, winh / 8, window);
     draw_string("(choose a level)", sprites, renderer, DRAWSTRING_CENTER, winh / 8 + 40, window);
     sprintf(levelnum, "Level %d of %d", selection + 1, levelscount);
