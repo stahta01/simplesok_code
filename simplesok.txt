@@ -17,7 +17,8 @@ virtually anything that has a C compiler and the SDL library.
   - 3 embedded level sets,
   - support for external *.xsb levels,
   - support for levels of size up to 62x62,
-  - saving levels to clipboard,
+  - copying levels to clipboard,
+  - save/load,
   - ...
 
 I provide a build of the game for a couple of Linux distributions via the
