@@ -888,15 +888,15 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
             if (selection + 1 < maxallowedlevel) selection++;
             break;
           case SDLK_HOME:
-          case SDLK_KP_1:
+          case SDLK_KP_7:
             selection = 0;
             break;
           case SDLK_END:
-          case SDLK_KP_7:
+          case SDLK_KP_1:
             selection = maxallowedlevel - 1;
             break;
           case SDLK_PAGEUP:
-          case SDLK_KP_3:
+          case SDLK_KP_9:
             if (selection < 3) {
                 selection = 0;
               } else {
@@ -904,7 +904,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
             }
             break;
           case SDLK_PAGEDOWN:
-          case SDLK_KP_9:
+          case SDLK_KP_3:
             if (selection + 3 >= maxallowedlevel) {
                 selection = maxallowedlevel - 1;
               } else {
