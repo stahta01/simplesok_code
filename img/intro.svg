@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.4 r9939"
    sodipodi:docname="intro.svg"
-   inkscape:export-filename="/home/mateusz/svn/sok/img/intro.png"
+   inkscape:export-filename="/home/mateusz/svn/simplesok/img/intro.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -68,9 +68,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.74"
+     inkscape:zoom="1.07"
      inkscape:cx="366.35707"
-     inkscape:cy="302.49377"
+     inkscape:cy="310.61885"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -88,7 +88,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -108,10 +108,10 @@
     <rect
        style="fill:#6386ff;fill-opacity:1;stroke:none;filter:url(#filter3927)"
        id="rect3036"
-       width="434.59122"
-       height="162.01036"
-       x="182.70439"
-       y="822.52014"
+       width="436.31534"
+       height="239.59659"
+       x="180.98026"
+       y="744.93396"
        ry="16.93796" />
     <g
        id="g3056-6"
@@ -183,66 +183,6 @@
          id="tspan3022"
          x="209.25926"
          y="445.37036" /></text>
-    <path
-       sodipodi:type="arc"
-       style="fill:#639bff;fill-opacity:0.58737862;stroke:none;filter:url(#filter3827)"
-       id="path3792"
-       sodipodi:cx="53.04348"
-       sodipodi:cy="390.86957"
-       sodipodi:rx="120.86956"
-       sodipodi:ry="56.956524"
-       d="m 173.91304,390.86957 c 0,31.45622 -54.11515,56.95652 -120.86956,56.95652 -66.754415,0 -120.86956,-25.5003 -120.86956,-56.95652 0,-31.45622 54.115145,-56.95653 120.86956,-56.95653 66.75441,0 120.86956,25.50031 120.86956,56.95653 z"
-       transform="translate(346.95652,354.97088)" />
-    <g
-       id="g3862"
-       transform="matrix(0.63154017,0,0,0.63154017,151.49037,180.68873)"
-       style="opacity:0.85950413">
-      <text
-         sodipodi:linespacing="125%"
-         id="text3012"
-         y="869.93719"
-         x="245.0993"
-         style="font-size:22px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans;-inkscape-font-specification:'micro.pcf Bold'"
-         xml:space="preserve"><tspan
-           style="font-size:16px;fill:#000000;fill-opacity:0.78431373"
-           y="869.93719"
-           x="245.0993"
-           id="tspan3014"
-           sodipodi:role="line"><tspan
-   id="tspan3024"
-   style="font-size:16px;font-weight:normal;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans">Original idea:</tspan> Hiroyuki Imabayashi</tspan></text>
-      <text
-         sodipodi:linespacing="125%"
-         id="text3028"
-         y="896.85516"
-         x="284.73917"
-         style="font-size:19px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans"
-         xml:space="preserve"><tspan
-           style="font-size:16px;fill:#000000;fill-opacity:0.78431373"
-           y="896.85516"
-           x="284.73917"
-           id="tspan3030"
-           sodipodi:role="line">Graphic:<tspan
-   id="tspan3042"
-   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans Bold"> Gerry Wiseman </tspan></tspan></text>
-      <text
-         sodipodi:linespacing="125%"
-         id="text3032"
-         y="922.36584"
-         x="512.38159"
-         style="font-size:16px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:0.78431373;stroke:none;font-family:Sans"
-         xml:space="preserve"><tspan
-           y="922.36584"
-           x="517.94409"
-           id="tspan3034"
-           sodipodi:role="line">Level design:<tspan
-   id="tspan3044"
-   style="font-size:16px;font-weight:bold;fill:#000000;fill-opacity:0.78431373;-inkscape-font-specification:Sans Bold"> David W. Skinner </tspan></tspan><tspan
-           id="tspan3036"
-           y="942.36584"
-           x="512.38159"
-           sodipodi:role="line" /></text>
-    </g>
     <g
        id="g3795">
       <rect
@@ -298,16 +238,5 @@
    id="tspan3835"
    style="font-size:16px">©</tspan> Mateusz Viste</tspan></text>
     </g>
-    <text
-       xml:space="preserve"
-       style="font-size:14.69229317px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.6553398;stroke:none;font-family:Sans;-inkscape-font-specification:Sans Bold"
-       x="370.29977"
-       y="711.96387"
-       id="text3846"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3848"
-         x="370.29977"
-         y="711.96387">Credits</tspan></text>
   </g>
 </svg>

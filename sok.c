@@ -29,8 +29,13 @@
 #include "data_skn.h"           /* embedded skin files */
 #include "data_ico.h"           /* embedded the icon file */
 #include "gz.h"
+#include "http.h"
 
 #define PVER "v1.0.1 beta"
+
+#define INET_HOST "simplesok.sourceforge.net"
+#define INET_PORT 80
+#define INET_PATH "/netlevels/"
 
 #define debugmode 0
 
@@ -643,8 +648,9 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
   int oldpusherposy = 0, newpusherposy, x, selectionchangeflag = 0;
   unsigned char *memptr[3] = {levels_microban_xsb_gz, levels_sasquatch_xsb_gz, levels_sasquatch3_xsb_gz};
   long memptrlen[3];
-  char *levname[3] = {"Easy (Microban)", "Normal (Sasquatch)", "Hard (Sasquatch III)"};
+  char *levname[5] = {"Easy (Microban)", "Normal (Sasquatch)", "Hard (Sasquatch III)", "Internet levels", "Quit"};
   int textvadj = 12;
+  int selectionpos[16];
   SDL_Event event;
   SDL_Rect rect;
 
@@ -655,17 +661,24 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
 
   /* compute the pixel width of the longest string in the menu */
   longeststringw = 0;
-  for (x = 0; x < 3; x++) {
+  for (x = 0; x < 5; x++) {
     get_string_size(levname[x], sprites, &stringw, &stringh);
     if (stringw > longeststringw) longeststringw = stringw;
   }
 
   for (;;) {
     int refreshnow = 1;
+    /* get windows x / y size */
     SDL_GetWindowSize(window, &winw, &winh);
+    /* precompute the y-axis position of every line */
+    for (x = 0; x < 5; x++) {
+      selectionpos[x] = (winh * 0.51) + (winh * 0.06 * x);
+      if (x > 2) selectionpos[x] += (winh / 64); /* add a small vertical gap before "Internet levels" */
+      if (x > 3) selectionpos[x] += (winh / 64); /* add a small vertical gap before "Quit" */
+    }
     /* compute the dst rect of the pusher */
     rect.x = ((winw - longeststringw) >> 1) - 54;
-    newpusherposy = winh * 0.63 + winh * 0.08 * selection;
+    newpusherposy = selectionpos[selection];
     rect.w = settings->tilesize;
     rect.h = settings->tilesize;
     if (selectionchangeflag == 0) oldpusherposy = newpusherposy;
@@ -676,8 +689,8 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       if (refreshnow) { /* wait for x ms */
         displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
         SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
-        for (x = 0; x < 3; x++) {
-          draw_string(levname[x], sprites, renderer, rect.x + 54, textvadj + winh * 0.63 + winh * 0.08 * x, window);
+        for (x = 0; x < 5; x++) {
+          draw_string(levname[x], sprites, renderer, rect.x + 54, textvadj + selectionpos[x], window);
         }
         SDL_RenderPresent(renderer);
         if (rect.y == newpusherposy) break;
@@ -716,6 +729,8 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
+            if (selection == 3) return((unsigned char *)"@");
+            if (selection == 4) return(NULL); /* Quit */
             *levelfilelen = memptrlen[selection];
             return(memptr[selection]);
             break;
@@ -726,8 +741,8 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             return(NULL);
             break;
         }
-        if (selection < 0) selection = 2;
-        if (selection > 2) selection = 0;
+        if (selection < 0) selection = 4;
+        if (selection > 4) selection = 0;
     }
   }
   if (exitflag != 0) return(NULL);
@@ -789,8 +804,19 @@ static void blit_levelmap(struct sokgame *game, struct spritesstruct *sprites, i
   SDL_RenderFillRect(renderer, &bgrect);
   /* if background enabled, then draw the border */
   if (flags & BLIT_LEVELMAP_BACKGROUND) {
+    int i;
     SDL_SetRenderDrawColor(renderer, 0x28, 0x28, 0x28, 255);
     SDL_RenderDrawRect(renderer, &bgrect);
+    /* draw a nice fade-out effect around the selected level */
+    for (i = 1; i < 20; i++) {
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255 - i * (255 / 20));
+      bgrect.x -= 1;
+      bgrect.y -= 1;
+      bgrect.w += 2;
+      bgrect.h += 2;
+      SDL_RenderDrawRect(renderer, &bgrect);
+    }
+    /* set the drawing color to its default, plain black color */
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   }
   /* if level is solved, draw a 'complete' tag */
@@ -1010,6 +1036,23 @@ static void dumplevel2clipboard(struct sokgame *game, char *history) {
   free(txt);
 }
 
+static unsigned char *selectinternetlevel(char *host, long port, char *path, char *levelslist, int levelslistlen, long *reslen) {
+  int i;
+  unsigned char *res = NULL;
+  char url[2048];
+  printf("%s", levelslist);
+  for (i = 0; levelslist[i] != 0; i++) if (levelslist[i] == '\t') levelslist[i] = 0;
+  snprintf(url, 2048, "%s/%s", INET_PATH, levelslist);
+  *reslen = http_get(INET_HOST, INET_PORT, url, &res);
+  printf("fetched %ld bytes\n", *reslen);
+  /* load levelslist into an array */
+  /* display screen */
+  /* wait for event */
+  /* check event */
+  return(res);
+}
+
+
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
   struct sokgamestates *states;
@@ -1019,9 +1062,13 @@ int main(int argc, char **argv) {
   int playsolution, drawscreenflags;
   char *levelfile = NULL;
   char *playsource = NULL;
+  char *levelslist = NULL;
+  long levelslistlen = 0;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
   struct videosettings settings;
+  unsigned char *xsblevelptr = NULL;
+  long xsblevelptrlen = 0;
 
   SDL_Window* window = NULL;
   SDL_Renderer *renderer;
@@ -1215,20 +1262,26 @@ int main(int argc, char **argv) {
   if (states == NULL) return(1);
 
   GametypeSelectMenu:
+  if (levelslist != NULL) free(levelslist);
   curlevel = -1;
   levelscount = -1;
   settings.tilesize = settings.nativetilesize;
-  if (levelfile != NULL) {
+  if (levelfile != NULL) goto LoadLevelFile;
+  xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile, &xsblevelptrlen);
+
+  LoadInternetLevels:
+  if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) { /* internet levels */
+      levelslistlen = http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
+      xsblevelptr = selectinternetlevel(INET_HOST, INET_PORT, INET_PATH, levelslist, levelslistlen, &xsblevelptrlen);
+    } else if ((xsblevelptr == NULL) && (levelfile == NULL)) { /* nothing */
+      exitflag = 1;
+  }
+
+  LoadLevelFile:
+  if ((levelfile != NULL) && (exitflag == 0)) {
       levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, NULL, 0, levcomment, LEVCOMMENTMAXLEN);
-    } else {
-      unsigned char *xsblevelptr;
-      long xsblevelptrlen;
-      xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile, &xsblevelptrlen);
-      if ((xsblevelptr == NULL) && (levelfile == NULL)) {
-          exitflag = 1;
-        } else {
-          levelscount = sok_loadfile(gameslist, MAXLEVELS, levelfile, xsblevelptr, xsblevelptrlen, levcomment, LEVCOMMENTMAXLEN);
-      }
+    } else if (exitflag == 0) {
+      levelscount = sok_loadfile(gameslist, MAXLEVELS, NULL, xsblevelptr, xsblevelptrlen, levcomment, LEVCOMMENTMAXLEN);
   }
 
   if ((levelscount < 1) && (exitflag == 0)) {
@@ -1250,6 +1303,7 @@ int main(int argc, char **argv) {
     curlevel = selectlevel(gameslist, sprites, renderer, window, &settings, levcomment, levelscount, curlevel, &levelfile);
     if (curlevel == SELECTLEVEL_BACK) {
         if (levelfile == NULL) {
+            if (levelslist != NULL) goto LoadInternetLevels;
             goto GametypeSelectMenu;
           } else {
             exitflag = 1;

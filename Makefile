@@ -4,8 +4,8 @@ CLIBS = `sdl2-config --libs`
 
 all: simplesok
 
-simplesok: sok.o sok_core.o crc32.o save.o gz.o
-	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o gz.o -o simplesok $(CLIBS)
+simplesok: sok.o sok_core.o crc32.o save.o gz.o http.o
+	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o gz.o http.o -o simplesok $(CLIBS)
 
 sok.o: sok.c
 	gcc -c $(CFLAGS) sok.c -o sok.o
@@ -21,6 +21,9 @@ save.o: save.c
 
 gz.o: gz.c
 	gcc -c $(CFLAGS) gz.c -o gz.o
+
+http.o: http.c
+	gcc -c $(CFLAGS) http.c -o http.o
 
 clean:
 	rm -f *.o simplesok file2c
