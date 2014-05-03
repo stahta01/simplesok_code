@@ -2,8 +2,13 @@
  * Copyright (C) Mateusz Viste 2014
  */
 
+#if defined(_WIN32) || defined(WIN32)
+  #include <winsock2.h>  /* gethostbyname() on nonstandard, exotic platforms */
+#else
+  #include <netdb.h>     /* gethostbyname() on posix */
+#endif
+
 #include <errno.h>
-#include <netdb.h>  /* gethostbyname() */
 #include <unistd.h> /* NULL */
 #include <string.h> /* memcpy() */
 #include <stdlib.h> /* realloc(), malloc() */

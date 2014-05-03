@@ -1,6 +1,6 @@
 
 CFLAGS = -O3 -Wall -Wextra -std=gnu89 -pedantic -Wno-long-long
-CLIBS = -lmingw32 -Dmain=SDL_main -lSDL2main -lSDL2 -mwindows -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc
+CLIBS = -lmingw32 -Dmain=SDL_main -lSDL2main -lSDL2 -mwindows -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc -lws2_32
 
 all: simplesok.exe
 
