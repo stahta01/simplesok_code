@@ -67,6 +67,13 @@
 #define SELECTLEVEL_BACK -1
 #define SELECTLEVEL_QUIT -2
 #define SELECTLEVEL_LOADFILE -3
+#define SELECTLEVEL_OK -4
+
+enum leveltype {
+  LEVEL_INTERNAL,
+  LEVEL_INTERNET,
+  LEVEL_FILE
+};
 
 struct spritesstruct {
   SDL_Texture *atom;
@@ -1081,11 +1088,12 @@ static void fetchtoken(char *res, char *buf, int pos) {
   res[x] = 0;
 }
 
-static unsigned char *selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites, char *host, long port, char *path, char *levelslist, long *reslen) {
+static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites, char *host, long port, char *path, char *levelslist, unsigned char **xsbptr, long *reslen) {
   unsigned char *res = NULL;
   char url[2048], buff[2048];
   char *inetlist[1024];
-  int inetlistlen = 0, selection = 0, i, selected = 0;
+  int inetlistlen = 0, i, selected = 0;
+  static int selection = 0;
   SDL_Event event;
   /* load levelslist into an array */
   for (;;) {
@@ -1119,7 +1127,7 @@ static unsigned char *selectinternetlevel(SDL_Renderer *renderer, SDL_Window *wi
     }
     /* check what event we got */
     if (event.type == SDL_QUIT) {
-        /* exitflag = 1; */
+        selected = SELECTLEVEL_QUIT;
       /* } else if (event.type == SDL_DROPFILE) {
         if (processDropFileEvent(&event, &levelfile) != NULL) {
           fade2texture(renderer, window, sprites->black);
@@ -1137,22 +1145,30 @@ static unsigned char *selectinternetlevel(SDL_Renderer *renderer, SDL_Window *wi
             break;
           case SDLK_RETURN:
           case SDLK_KP_ENTER:
-            selected = 1;
+            selected = SELECTLEVEL_OK;
+            break;
+          case SDLK_ESCAPE:
+            selected = SELECTLEVEL_BACK;
             break;
         }
     }
-    if (selected) break;
+    if (selected != 0) break;
   }
   /* fetch the selected level */
-  fetchtoken(buff, inetlist[selection], 0);
-  sprintf(url, "%s%s", path, buff);
-  *reslen = http_get(host, port, url, &res);
+  if (selected == SELECTLEVEL_OK) {
+      fetchtoken(buff, inetlist[selection], 0);
+      sprintf(url, "%s%s", path, buff);
+      *reslen = http_get(host, port, url, &res);
+      *xsbptr = res;
+    } else {
+      *xsbptr = NULL;
+  }
   /* free the list */
   while (inetlistlen > 0) {
     inetlistlen -= 1;
     free(inetlist[inetlistlen]);
   }
-  return(res);
+  return(selected);
 }
 
 
@@ -1171,6 +1187,7 @@ int main(int argc, char **argv) {
   struct videosettings settings;
   unsigned char *xsblevelptr = NULL;
   long xsblevelptrlen = 0;
+  enum leveltype levelsource = LEVEL_INTERNAL;
 
   SDL_Window* window = NULL;
   SDL_Renderer *renderer;
@@ -1370,11 +1387,16 @@ int main(int argc, char **argv) {
   settings.tilesize = settings.nativetilesize;
   if (levelfile != NULL) goto LoadLevelFile;
   xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile, &xsblevelptrlen);
+  levelsource = LEVEL_INTERNAL;
+  if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) levelsource = LEVEL_INTERNET;
 
   LoadInternetLevels:
-  if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) { /* internet levels */
+  if (levelsource == LEVEL_INTERNET) { /* internet levels */
+      int selectres;
       http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
-      xsblevelptr = selectinternetlevel(renderer, window, sprites, INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptrlen);
+      selectres = selectinternetlevel(renderer, window, sprites, INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptr, &xsblevelptrlen);
+      if (selectres == SELECTLEVEL_BACK) goto GametypeSelectMenu;
+      if (selectres == SELECTLEVEL_QUIT) exitflag = 1;
     } else if ((xsblevelptr == NULL) && (levelfile == NULL)) { /* nothing */
       exitflag = 1;
   }
