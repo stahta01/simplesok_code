@@ -1081,11 +1081,12 @@ static void fetchtoken(char *res, char *buf, int pos) {
   res[x] = 0;
 }
 
-static unsigned char *selectinternetlevel(char *host, long port, char *path, char *levelslist, long *reslen) {
+static unsigned char *selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites, char *host, long port, char *path, char *levelslist, long *reslen) {
   unsigned char *res = NULL;
   char url[2048], buff[2048];
   char *inetlist[1024];
-  int inetlistlen = 0, selection = 0;
+  int inetlistlen = 0, selection = 0, i, selected = 0;
+  SDL_Event event;
   /* load levelslist into an array */
   for (;;) {
     inetlist[inetlistlen] = readmemline(&levelslist);
@@ -1093,9 +1094,55 @@ static unsigned char *selectinternetlevel(char *host, long port, char *path, cha
     inetlistlen += 1;
     if (inetlistlen >= 1024) break;
   }
-  /* display screen */
-  /* wait for event */
-  /* check event */
+  /* selection loop */
+  for (;;) {
+    /* display screen */
+    SDL_RenderClear(renderer);
+    for (i = 0; i < 16; i++) {
+      if (i >= inetlistlen) break;
+      fetchtoken(buff, inetlist[i], 1);
+      draw_string(buff, sprites, renderer, 30, i * 24, window);
+      if (i == selection) {
+        SDL_Rect rect;
+        rect.x = 0;
+        rect.y = i * 24;
+        rect.w = 30;
+        rect.h = 30;
+        SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
+      }
+    }
+    SDL_RenderPresent(renderer);
+    /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
+    for (;;) {
+      SDL_WaitEvent(&event);
+      if ((event.type != SDL_KEYUP) && (event.type != SDL_MOUSEMOTION)) break;
+    }
+    /* check what event we got */
+    if (event.type == SDL_QUIT) {
+        /* exitflag = 1; */
+      /* } else if (event.type == SDL_DROPFILE) {
+        if (processDropFileEvent(&event, &levelfile) != NULL) {
+          fade2texture(renderer, window, sprites->black);
+          goto GametypeSelectMenu;
+        } */
+      } else if (event.type == SDL_KEYDOWN) {
+        switch (event.key.keysym.sym) {
+          case SDLK_UP:
+          case SDLK_KP_2:
+            if (selection > 0) selection -= 1;
+            break;
+          case SDLK_DOWN:
+          case SDLK_KP_8:
+            if (selection + 1 < inetlistlen) selection += 1;
+            break;
+          case SDLK_RETURN:
+          case SDLK_KP_ENTER:
+            selected = 1;
+            break;
+        }
+    }
+    if (selected) break;
+  }
   /* fetch the selected level */
   fetchtoken(buff, inetlist[selection], 0);
   sprintf(url, "%s%s", path, buff);
@@ -1327,7 +1374,7 @@ int main(int argc, char **argv) {
   LoadInternetLevels:
   if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) { /* internet levels */
       http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
-      xsblevelptr = selectinternetlevel(INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptrlen);
+      xsblevelptr = selectinternetlevel(renderer, window, sprites, INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptrlen);
     } else if ((xsblevelptr == NULL) && (levelfile == NULL)) { /* nothing */
       exitflag = 1;
   }
