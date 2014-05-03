@@ -14,6 +14,13 @@
 #include <stdlib.h> /* realloc(), malloc() */
 #include <stdio.h>  /* sprintf() */
 
+void init_net(void) {
+  #if defined(_WIN32) || defined(WIN32)
+  WSADATA wsaData;
+  WSAStartup(MAKEWORD(2,2), &wsaData);
+  #endif
+}
+
 /* open socket to remote host/port and return its socket descriptor */
 static int makeSocket(char *host, long portnum) {
   int sock;

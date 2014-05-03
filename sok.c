@@ -1171,7 +1171,6 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
   return(selected);
 }
 
-
 int main(int argc, char **argv) {
   struct sokgame **gameslist, game;
   struct sokgamestates *states;
@@ -1195,6 +1194,9 @@ int main(int argc, char **argv) {
 
   /* init (seed) the randomizer */
   srand(time(NULL));
+
+  /* init networking stack (required on windows) */
+  init_net();
 
   /* Init SDL and set the video mode */
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
