@@ -1036,19 +1036,75 @@ static void dumplevel2clipboard(struct sokgame *game, char *history) {
   free(txt);
 }
 
-static unsigned char *selectinternetlevel(char *host, long port, char *path, char *levelslist, int levelslistlen, long *reslen) {
-  int i;
+/* reads a chunk of text from memory. returns the line in a chunk of memory that needs to be freed afterwards */
+static char *readmemline(char **memptrptr) {
+  long linelen;
+  char *res;
+  char *memptr;
+  memptr = *memptrptr;
+  if (*memptr == 0) return(NULL);
+  /* check how long the line is */
+  for (linelen = 0; ; linelen += 1) {
+    if (memptr[linelen] == 0) break;
+    if (memptr[linelen] == '\n') break;
+  }
+  /* allocate memory for the line, and copy its content */
+  res = malloc(linelen + 1);
+  memcpy(res, memptr, linelen);
+  /* move the original pointer forward */
+  *memptrptr += linelen;
+  if (**memptrptr == '\n') *memptrptr += 1;
+  /* trim out trailing \r, if any */
+  if ((linelen > 0) && (res[linelen - 1] == '\r')) linelen -= 1;
+  /* terminate the line with a null terminator */
+  res[linelen] = 0;
+  return(res);
+}
+
+static void fetchtoken(char *res, char *buf, int pos) {
+  int tokpos = 0, x;
+  /* forward to the position where the token starts */
+  while (tokpos != pos) {
+    if (*buf == 0) {
+        break;
+      } else if (*buf == '\t') {
+        tokpos += 1;
+    }
+    buf += 1;
+  }
+  /* copy the token to buf, until \t or \0 */
+  for (x = 0;; x++) {
+    if (buf[x] == '\0') break;
+    if (buf[x] == '\t') break;
+    res[x] = buf[x];
+  }
+  res[x] = 0;
+}
+
+static unsigned char *selectinternetlevel(char *host, long port, char *path, char *levelslist, long *reslen) {
   unsigned char *res = NULL;
-  char url[2048];
-  printf("%s", levelslist);
-  for (i = 0; levelslist[i] != 0; i++) if (levelslist[i] == '\t') levelslist[i] = 0;
-  snprintf(url, 2048, "%s/%s", INET_PATH, levelslist);
-  *reslen = http_get(INET_HOST, INET_PORT, url, &res);
-  printf("fetched %ld bytes\n", *reslen);
+  char url[2048], buff[2048];
+  char *inetlist[1024];
+  int inetlistlen = 0, selection = 0;
   /* load levelslist into an array */
+  for (;;) {
+    inetlist[inetlistlen] = readmemline(&levelslist);
+    if (inetlist[inetlistlen] == NULL) break;
+    inetlistlen += 1;
+    if (inetlistlen >= 1024) break;
+  }
   /* display screen */
   /* wait for event */
   /* check event */
+  /* fetch the selected level */
+  fetchtoken(buff, inetlist[selection], 0);
+  sprintf(url, "%s%s", path, buff);
+  *reslen = http_get(host, port, url, &res);
+  /* free the list */
+  while (inetlistlen > 0) {
+    inetlistlen -= 1;
+    free(inetlist[inetlistlen]);
+  }
   return(res);
 }
 
@@ -1063,7 +1119,6 @@ int main(int argc, char **argv) {
   char *levelfile = NULL;
   char *playsource = NULL;
   char *levelslist = NULL;
-  long levelslistlen = 0;
   #define LEVCOMMENTMAXLEN 32
   char levcomment[LEVCOMMENTMAXLEN];
   struct videosettings settings;
@@ -1271,8 +1326,8 @@ int main(int argc, char **argv) {
 
   LoadInternetLevels:
   if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) { /* internet levels */
-      levelslistlen = http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
-      xsblevelptr = selectinternetlevel(INET_HOST, INET_PORT, INET_PATH, levelslist, levelslistlen, &xsblevelptrlen);
+      http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
+      xsblevelptr = selectinternetlevel(INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptrlen);
     } else if ((xsblevelptr == NULL) && (levelfile == NULL)) { /* nothing */
       exitflag = 1;
   }
