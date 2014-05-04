@@ -1207,7 +1207,7 @@ static void fetchtoken(char *res, char *buf, int pos) {
 
 static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites, char *host, long port, char *path, char *levelslist, unsigned char **xsbptr, long *reslen) {
   unsigned char *res = NULL;
-  char url[2048], buff[2048];
+  char url[2048], buff[2048], buff2[2048];
   char *inetlist[1024];
   int inetlistlen = 0, i, selected = 0, windowrows, fontheight = 24, winw, winh;
   static int selection = 0, seloffset = 0;
@@ -1221,17 +1221,17 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
   }
   /* selection loop */
   for (;;) {
+    SDL_Rect rect;
     /* compute the amount of rows we can fit onscreen */
     SDL_GetWindowSize(window, &winw, &winh);
-    windowrows = winh / fontheight;
-    /* display screen */
+    windowrows = (winh / fontheight) - 6;
+    /* display the list of levels */
     SDL_RenderClear(renderer);
     for (i = 0; i < windowrows; i++) {
       if (i + seloffset >= inetlistlen) break;
       fetchtoken(buff, inetlist[i + seloffset], 1);
       draw_string(buff, sprites, renderer, 30, i * fontheight, window);
       if (i + seloffset == selection) {
-        SDL_Rect rect;
         rect.x = 0;
         rect.y = i * fontheight;
         rect.w = 30;
@@ -1239,6 +1239,25 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
         SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
       }
     }
+    /* render backround of level description */
+    rect.x = 0;
+    rect.y = windowrows * fontheight + (fontheight * 0.4);
+    rect.w = winw;
+    rect.h = winh;
+    SDL_SetRenderDrawColor(renderer, 0x30, 0x30, 0x30, 255);
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_SetRenderDrawColor(renderer, 0xC0, 0xC0, 0xC0, 255);
+    SDL_RenderDrawLine(renderer, 0, rect.y, winw, rect.y);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    /* draw level description */
+    fetchtoken(buff2, inetlist[selection], 1);
+    draw_string(buff2, sprites, renderer, DRAWSTRING_CENTER, rect.y, window);
+    fetchtoken(buff2, inetlist[selection], 2);
+    sprintf(buff, "Copyright (C) %s", buff2);
+    draw_string(buff, sprites, renderer, DRAWSTRING_CENTER, rect.y + fontheight, window);
+    fetchtoken(buff, inetlist[selection], 3);
+    draw_string(buff, sprites, renderer, 0, rect.y + fontheight * 2.6, window);
+    /* refresh screen */
     SDL_RenderPresent(renderer);
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
     for (;;) {
