@@ -1263,6 +1263,15 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
           case KEY_ESCAPE:
             selected = SELECTLEVEL_BACK;
             break;
+          case KEY_F11:
+            switchfullscreen(window);
+            break;
+          case KEY_HOME:
+            selection = 0;
+            break;
+          case KEY_END:
+            selection = inetlistlen - 1;
+            break;
         }
     }
     if (selected != 0) break;
@@ -1507,6 +1516,7 @@ int main(int argc, char **argv) {
   xsblevelptr = selectgametype(renderer, sprites, window, &settings, &levelfile, &xsblevelptrlen);
   levelsource = LEVEL_INTERNAL;
   if ((xsblevelptr != NULL) && (*xsblevelptr == '@')) levelsource = LEVEL_INTERNET;
+  if (exitflag == 0) fade2texture(renderer, window, sprites->black);
 
   LoadInternetLevels:
   if (levelsource == LEVEL_INTERNET) { /* internet levels */
@@ -1515,6 +1525,7 @@ int main(int argc, char **argv) {
       selectres = selectinternetlevel(renderer, window, sprites, INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptr, &xsblevelptrlen);
       if (selectres == SELECTLEVEL_BACK) goto GametypeSelectMenu;
       if (selectres == SELECTLEVEL_QUIT) exitflag = 1;
+      if (exitflag == 0) fade2texture(renderer, window, sprites->black);
     } else if ((xsblevelptr == NULL) && (levelfile == NULL)) { /* nothing */
       exitflag = 1;
   }
@@ -1533,7 +1544,6 @@ int main(int argc, char **argv) {
     wait_for_a_key(-1, renderer);
     exitflag = 1;
   }
-  if (exitflag == 0) fade2texture(renderer, window, sprites->black);
 
   /* printf("Loaded %d levels '%s'\n", levelscount, levcomment); */
 
