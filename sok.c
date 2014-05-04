@@ -69,6 +69,39 @@
 #define SELECTLEVEL_LOADFILE -3
 #define SELECTLEVEL_OK -4
 
+enum normalizedkeys {
+  KEY_UP,
+  KEY_DOWN,
+  KEY_LEFT,
+  KEY_RIGHT,
+  KEY_CTRL_UP,
+  KEY_CTRL_DOWN,
+  KEY_ENTER,
+  KEY_BACKSPACE,
+  KEY_PAGEUP,
+  KEY_PAGEDOWN,
+  KEY_HOME,
+  KEY_END,
+  KEY_ESCAPE,
+  KEY_F1,
+  KEY_F2,
+  KEY_F3,
+  KEY_F4,
+  KEY_F5,
+  KEY_F6,
+  KEY_F7,
+  KEY_F8,
+  KEY_F9,
+  KEY_F10,
+  KEY_F11,
+  KEY_F12,
+  KEY_S,
+  KEY_R,
+  KEY_CTRL_C,
+  KEY_CTRL_V,
+  KEY_UNKNOWN
+};
+
 enum leveltype {
   LEVEL_INTERNAL,
   LEVEL_INTERNET,
@@ -111,6 +144,105 @@ struct videosettings {
 static int absval(int i) {
   if (i < 0) return(-i);
   return(i);
+}
+
+/* normalize SDL keys to values easier to handle */
+static int normalizekeys(SDL_Keycode key) {
+  switch (key) {
+    case SDLK_UP:
+    case SDLK_KP_8:
+      if (SDL_GetModState() & KMOD_CTRL) return(KEY_CTRL_UP);
+      return(KEY_UP);
+      break;
+    case SDLK_DOWN:
+    case SDLK_KP_2:
+      if (SDL_GetModState() & KMOD_CTRL) return(KEY_CTRL_DOWN);
+      return(KEY_DOWN);
+      break;
+    case SDLK_LEFT:
+    case SDLK_KP_4:
+      return(KEY_LEFT);
+      break;
+    case SDLK_RIGHT:
+    case SDLK_KP_6:
+      return(KEY_RIGHT);
+      break;
+    case SDLK_RETURN:
+    case SDLK_KP_ENTER:
+      return(KEY_ENTER);
+      break;
+    case SDLK_BACKSPACE:
+      return(KEY_BACKSPACE);
+      break;
+    case SDLK_PAGEUP:
+    case SDLK_KP_9:
+      return(KEY_PAGEUP);
+      break;
+    case SDLK_PAGEDOWN:
+    case SDLK_KP_3:
+      return(KEY_PAGEDOWN);
+      break;
+    case SDLK_HOME:
+    case SDLK_KP_7:
+      return(KEY_HOME);
+      break;
+    case SDLK_END:
+    case SDLK_KP_1:
+      return(KEY_END);
+      break;
+    case SDLK_ESCAPE:
+      return(KEY_ESCAPE);
+      break;
+    case SDLK_F1:
+      return(KEY_F1);
+      break;
+    case SDLK_F2:
+      return(KEY_F2);
+      break;
+    case SDLK_F3:
+      return(KEY_F3);
+      break;
+    case SDLK_F4:
+      return(KEY_F4);
+      break;
+    case SDLK_F5:
+      return(KEY_F5);
+      break;
+    case SDLK_F6:
+      return(KEY_F6);
+      break;
+    case SDLK_F7:
+      return(KEY_F7);
+      break;
+    case SDLK_F8:
+      return(KEY_F8);
+      break;
+    case SDLK_F9:
+      return(KEY_F9);
+      break;
+    case SDLK_F10:
+      return(KEY_F10);
+      break;
+    case SDLK_F11:
+      return(KEY_F11);
+      break;
+    case SDLK_F12:
+      return(KEY_F12);
+      break;
+    case SDLK_s:
+      return(KEY_S);
+      break;
+    case SDLK_r:
+      return(KEY_R);
+      break;
+    case SDLK_c:
+      if (SDL_GetModState() & KMOD_CTRL) return(KEY_CTRL_C);
+      break;
+    case SDLK_v:
+      if (SDL_GetModState() & KMOD_CTRL) return(KEY_CTRL_V);
+      break;
+  }
+  return(KEY_UNKNOWN);
 }
 
 /* loads a gziped bmp image from memory and returns a surface */
@@ -723,28 +855,25 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
       } else if (event.type == SDL_DROPFILE) {
         if (processDropFileEvent(&event, levelfile) != NULL) return(NULL);
       } else if (event.type == SDL_KEYDOWN) {
-        switch (event.key.keysym.sym) {
-          case SDLK_UP:
-          case SDLK_KP_8:
+        switch (normalizekeys(event.key.keysym.sym)) {
+          case KEY_UP:
             selection--;
             selectionchangeflag = 1;
             break;
-          case SDLK_DOWN:
-          case SDLK_KP_2:
+          case KEY_DOWN:
             selection++;
             selectionchangeflag = 1;
             break;
-          case SDLK_RETURN:
-          case SDLK_KP_ENTER:
+          case KEY_ENTER:
             if (selection == 3) return((unsigned char *)"@");
             if (selection == 4) return(NULL); /* Quit */
             *levelfilelen = memptrlen[selection];
             return(memptr[selection]);
             break;
-          case SDLK_F11:
+          case KEY_F11:
             switchfullscreen(window);
             break;
-          case SDLK_ESCAPE:
+          case KEY_ESCAPE:
             return(NULL);
             break;
         }
@@ -911,59 +1040,46 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           return(SELECTLEVEL_LOADFILE);
         }
       } else if (event.type == SDL_KEYDOWN) {
-        switch (event.key.keysym.sym) {
-          case SDLK_LEFT:
-          case SDLK_KP_4:
+        switch (normalizekeys(event.key.keysym.sym)) {
+          case KEY_LEFT:
             if (selection > 0) selection--;
             break;
-          case SDLK_RIGHT:
-          case SDLK_KP_6:
+          case KEY_RIGHT:
             if (selection + 1 < maxallowedlevel) selection++;
             break;
-          case SDLK_HOME:
-          case SDLK_KP_7:
+          case KEY_HOME:
             selection = 0;
             break;
-          case SDLK_END:
-          case SDLK_KP_1:
+          case KEY_END:
             selection = maxallowedlevel - 1;
             break;
-          case SDLK_PAGEUP:
-          case SDLK_KP_9:
+          case KEY_PAGEUP:
             if (selection < 3) {
                 selection = 0;
               } else {
                 selection -= 3;
             }
             break;
-          case SDLK_PAGEDOWN:
-          case SDLK_KP_3:
+          case KEY_PAGEDOWN:
             if (selection + 3 >= maxallowedlevel) {
                 selection = maxallowedlevel - 1;
               } else {
                 selection += 3;
             }
             break;
-          case SDLK_UP:
-          case SDLK_KP_8:
-            if (SDL_GetModState() & KMOD_CTRL) {
-              if (settings->tilesize < 255) settings->tilesize += 4;
-            }
+          case KEY_CTRL_UP:
+            if (settings->tilesize < 255) settings->tilesize += 4;
             break;
-          case SDLK_DOWN:
-          case SDLK_KP_2:
-            if (SDL_GetModState() & KMOD_CTRL) {
-              if (settings->tilesize > 6) settings->tilesize -= 4;
-            }
+          case KEY_CTRL_DOWN:
+            if (settings->tilesize > 6) settings->tilesize -= 4;
             break;
-          case SDLK_RETURN:
-          case SDLK_KP_ENTER:
+          case KEY_ENTER:
             return(selection);
             break;
-          case SDLK_F11:
+          case KEY_F11:
             switchfullscreen(window);
             break;
-          case SDLK_ESCAPE:
+          case KEY_ESCAPE:
             fade2texture(renderer, window, sprites->black);
             return(SELECTLEVEL_BACK);
             break;
@@ -1134,20 +1250,17 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
           goto GametypeSelectMenu;
         } */
       } else if (event.type == SDL_KEYDOWN) {
-        switch (event.key.keysym.sym) {
-          case SDLK_UP:
-          case SDLK_KP_2:
+        switch (normalizekeys(event.key.keysym.sym)) {
+          case KEY_UP:
             if (selection > 0) selection -= 1;
             break;
-          case SDLK_DOWN:
-          case SDLK_KP_8:
+          case KEY_DOWN:
             if (selection + 1 < inetlistlen) selection += 1;
             break;
-          case SDLK_RETURN:
-          case SDLK_KP_ENTER:
+          case KEY_ENTER:
             selected = SELECTLEVEL_OK;
             break;
-          case SDLK_ESCAPE:
+          case KEY_ESCAPE:
             selected = SELECTLEVEL_BACK;
             break;
         }
@@ -1488,64 +1601,56 @@ int main(int argc, char **argv) {
         }
       } else if (event.type == SDL_KEYDOWN) {
         int res = 0, movedir = 0;
-        switch (event.key.keysym.sym) {
-          case SDLK_LEFT:
-          case SDLK_KP_4:
+        switch (normalizekeys(event.key.keysym.sym)) {
+          case KEY_LEFT:
             movedir = sokmoveLEFT;
             break;
-          case SDLK_RIGHT:
-          case SDLK_KP_6:
+          case KEY_RIGHT:
             movedir = sokmoveRIGHT;
             break;
-          case SDLK_UP:
-          case SDLK_KP_8: /* up - or zoom in (if used with CTRL) */
-            if (SDL_GetModState() & KMOD_CTRL) {
-                if (settings.tilesize < 255) settings.tilesize += 2;
-              } else {
-                movedir = sokmoveUP;
-            }
+          case KEY_UP:
+            movedir = sokmoveUP;
             break;
-          case SDLK_DOWN:
-          case SDLK_KP_2: /* down - or zoom out (if used with CTRL) */
-            if (SDL_GetModState() & KMOD_CTRL) {
-                if (settings.tilesize > 4) settings.tilesize -= 2;
-              } else {
-                movedir = sokmoveDOWN;
-            }
+          case KEY_CTRL_UP:
+            if (settings.tilesize < 255) settings.tilesize += 2;
             break;
-          case SDLK_BACKSPACE:
+          case KEY_DOWN:
+            movedir = sokmoveDOWN;
+            break;
+          case KEY_CTRL_DOWN:
+            if (settings.tilesize > 4) settings.tilesize -= 2;
+            break;
+          case KEY_BACKSPACE:
             if (playsolution == 0) sok_undo(&game, states);
             break;
-          case SDLK_r:
+          case KEY_R:
             playsolution = 0;
             loadlevel(&game, gameslist[curlevel], states);
             break;
-          case SDLK_F3: /* dump level & solution (if any) to clipboard */
+          case KEY_F3: /* dump level & solution (if any) to clipboard */
             dumplevel2clipboard(gameslist[curlevel], gameslist[curlevel]->solution);
             exitflag = displaytexture(renderer, sprites->copiedtoclipboard, window, 2, DISPLAYCENTERED, 255);
             break;
-          case SDLK_c:
-            if (SDL_GetModState() & KMOD_CTRL) {
-              dumplevel2clipboard(&game, states->history);
-              exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
+          case KEY_CTRL_C:
+            dumplevel2clipboard(&game, states->history);
+            exitflag = displaytexture(renderer, sprites->snapshottoclipboard, window, 2, DISPLAYCENTERED, 255);
+            break;
+          case KEY_CTRL_V:
+            {
+            char *solFromClipboard;
+            solFromClipboard = SDL_GetClipboardText();
+            if (isLegalSokoSolution(solFromClipboard) != 0) {
+                loadlevel(&game, gameslist[curlevel], states);
+                exitflag = displaytexture(renderer, sprites->playfromclipboard, window, 2, DISPLAYCENTERED, 255);
+                playsolution = 1;
+                if (playsource != NULL) free(playsource);
+                playsource = solFromClipboard;
+              } else {
+                if (solFromClipboard != NULL) free(solFromClipboard);
+            }
             }
             break;
-          case SDLK_v:
-            if (SDL_GetModState() & KMOD_CTRL) {
-              char *solFromClipboard;
-              solFromClipboard = SDL_GetClipboardText();
-              if (isLegalSokoSolution(solFromClipboard) != 0) {
-                  loadlevel(&game, gameslist[curlevel], states);
-                  exitflag = displaytexture(renderer, sprites->playfromclipboard, window, 2, DISPLAYCENTERED, 255);
-                  playsolution = 1;
-                  if (playsource != NULL) free(playsource);
-                  playsource = solFromClipboard;
-                } else {
-                  if (solFromClipboard != NULL) free(solFromClipboard);
-              }
-            }
-            break;
-          case SDLK_s:
+          case KEY_S:
             if (playsolution == 0) {
               if (game.solution != NULL) { /* only allow if there actually is a solution */
                   if (playsource != NULL) free(playsource);
@@ -1559,10 +1664,10 @@ int main(int argc, char **argv) {
               }
             }
             break;
-          case SDLK_F1:
+          case KEY_F1:
             if (playsolution == 0) showhelp = 1;
             break;
-          case SDLK_F2:
+          case KEY_F2:
             if ((drawscreenflags & DRAWSCREEN_NOBG) && (drawscreenflags & DRAWSCREEN_NOTXT)) {
                 drawscreenflags &= ~(DRAWSCREEN_NOBG | DRAWSCREEN_NOTXT);
               } else if (drawscreenflags & DRAWSCREEN_NOBG) {
@@ -1574,13 +1679,13 @@ int main(int argc, char **argv) {
                 drawscreenflags |= DRAWSCREEN_NOTXT;
             }
             break;
-          case SDLK_F5:
+          case KEY_F5:
             if (playsolution == 0) {
               exitflag = displaytexture(renderer, sprites->saved, window, 1, DISPLAYCENTERED, 255);
               solution_save(game.crc32, states->history, "sav");
             }
             break;
-          case SDLK_F7:
+          case KEY_F7:
             {
             char *loadsol;
             loadsol = solution_load(game.crc32, "sav");
@@ -1595,10 +1700,10 @@ int main(int argc, char **argv) {
             }
             }
             break;
-          case SDLK_F11:
+          case KEY_F11:
             switchfullscreen(window);
             break;
-          case SDLK_ESCAPE:
+          case KEY_ESCAPE:
             fade2texture(renderer, window, sprites->black);
             goto LevelSelectMenu;
             break;
