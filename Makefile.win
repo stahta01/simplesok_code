@@ -4,8 +4,8 @@ CLIBS = -lmingw32 -Dmain=SDL_main -lSDL2main -lSDL2 -mwindows -Wl,--no-undefined
 
 all: simplesok.exe
 
-simplesok.exe: sok.o sok_core.o crc32.o save.o gz.o http.o simplesok.res
-	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o gz.o http.o simplesok.res -o simplesok.exe $(CLIBS)
+simplesok.exe: sok.o sok_core.o crc32.o save.o gz.o net.o simplesok.res
+	gcc $(CFLAGS) sok.o sok_core.o crc32.o save.o gz.o net.o simplesok.res -o simplesok.exe $(CLIBS)
 
 simplesok.res: simplesok.rc
 	windres -i simplesok.rc --output-format coff -o simplesok.res
@@ -25,8 +25,8 @@ save.o: save.c
 gz.o: gz.c
 	gcc -c $(CFLAGS) gz.c -o gz.o
 
-http.o: http.c
-	gcc -c $(CFLAGS) http.c -o http.o
+net.o: net.c
+	gcc -c $(CFLAGS) net.c -o net.o
 
 clean:
 	del *.o

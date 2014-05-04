@@ -29,7 +29,7 @@
 #include "data_skn.h"           /* embedded skin files */
 #include "data_ico.h"           /* embedded the icon file */
 #include "gz.h"
-#include "http.h"
+#include "net.h"
 
 #define PVER "v1.0.1 beta"
 
