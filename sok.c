@@ -973,7 +973,7 @@ static int fade2texture(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture 
   for (alphaval = 0; alphaval < 64; alphaval += 4) {
     exitflag = displaytexture(renderer, texture, window, 0, 0, alphaval);
     if (exitflag != 0) break;
-    sokDelay(16 * 1000);  /* wait for 16ms */
+    sokDelay(15 * 1000);  /* wait for 15ms */
   }
   if (exitflag == 0) exitflag = displaytexture(renderer, texture, window, 0, 0, 255);
   return(exitflag);
@@ -1290,6 +1290,7 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
     inetlistlen -= 1;
     free(inetlist[inetlistlen]);
   }
+  fade2texture(renderer, window, sprites->black);
   return(selected);
 }
 
