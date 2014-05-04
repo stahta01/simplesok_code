@@ -1208,8 +1208,8 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
   unsigned char *res = NULL;
   char url[2048], buff[2048];
   char *inetlist[1024];
-  int inetlistlen = 0, i, selected = 0;
-  static int selection = 0;
+  int inetlistlen = 0, i, selected = 0, windowrows, fontheight = 24, winw, winh;
+  static int selection = 0, seloffset = 0;
   SDL_Event event;
   /* load levelslist into an array */
   for (;;) {
@@ -1220,16 +1220,19 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
   }
   /* selection loop */
   for (;;) {
+    /* compute the amount of rows we can fit onscreen */
+    SDL_GetWindowSize(window, &winw, &winh);
+    windowrows = winh / fontheight;
     /* display screen */
     SDL_RenderClear(renderer);
-    for (i = 0; i < 16; i++) {
-      if (i >= inetlistlen) break;
-      fetchtoken(buff, inetlist[i], 1);
-      draw_string(buff, sprites, renderer, 30, i * 24, window);
-      if (i == selection) {
+    for (i = 0; i < windowrows; i++) {
+      if (i + seloffset >= inetlistlen) break;
+      fetchtoken(buff, inetlist[i + seloffset], 1);
+      draw_string(buff, sprites, renderer, 30, i * fontheight, window);
+      if (i + seloffset == selection) {
         SDL_Rect rect;
         rect.x = 0;
-        rect.y = i * 24;
+        rect.y = i * fontheight;
         rect.w = 30;
         rect.h = 30;
         SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
@@ -1253,9 +1256,11 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
         switch (normalizekeys(event.key.keysym.sym)) {
           case KEY_UP:
             if (selection > 0) selection -= 1;
+            if ((seloffset > 0) && (selection < seloffset + 2)) seloffset -= 1;
             break;
           case KEY_DOWN:
             if (selection + 1 < inetlistlen) selection += 1;
+            if ((seloffset < inetlistlen - windowrows) && (selection >= seloffset + windowrows - 2)) seloffset += 1;
             break;
           case KEY_ENTER:
             selected = SELECTLEVEL_OK;
@@ -1268,9 +1273,11 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
             break;
           case KEY_HOME:
             selection = 0;
+            seloffset = 0;
             break;
           case KEY_END:
             selection = inetlistlen - 1;
+            seloffset = inetlistlen - windowrows;
             break;
         }
     }
