@@ -1383,7 +1383,10 @@ int main(int argc, char **argv) {
   if (states == NULL) return(1);
 
   GametypeSelectMenu:
-  if (levelslist != NULL) free(levelslist);
+  if (levelslist != NULL) {
+    free(levelslist);
+    levelslist = NULL;
+  }
   curlevel = -1;
   levelscount = -1;
   settings.tilesize = settings.nativetilesize;
@@ -1429,7 +1432,7 @@ int main(int argc, char **argv) {
     curlevel = selectlevel(gameslist, sprites, renderer, window, &settings, levcomment, levelscount, curlevel, &levelfile);
     if (curlevel == SELECTLEVEL_BACK) {
         if (levelfile == NULL) {
-            if (levelslist != NULL) goto LoadInternetLevels;
+            if (levelsource == LEVEL_INTERNET) goto LoadInternetLevels;
             goto GametypeSelectMenu;
           } else {
             exitflag = 1;
