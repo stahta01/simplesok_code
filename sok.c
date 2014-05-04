@@ -93,7 +93,7 @@ enum normalizedkeys {
   KEY_F8,
   KEY_F9,
   KEY_F10,
-  KEY_F11,
+  KEY_FULLSCREEN,
   KEY_F12,
   KEY_S,
   KEY_R,
@@ -169,6 +169,7 @@ static int normalizekeys(SDL_Keycode key) {
       break;
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
+      if (SDL_GetModState() & KMOD_ALT) return(KEY_FULLSCREEN);
       return(KEY_ENTER);
       break;
     case SDLK_BACKSPACE:
@@ -224,7 +225,7 @@ static int normalizekeys(SDL_Keycode key) {
       return(KEY_F10);
       break;
     case SDLK_F11:
-      return(KEY_F11);
+      return(KEY_FULLSCREEN);
       break;
     case SDLK_F12:
       return(KEY_F12);
@@ -870,7 +871,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
             *levelfilelen = memptrlen[selection];
             return(memptr[selection]);
             break;
-          case KEY_F11:
+          case KEY_FULLSCREEN:
             switchfullscreen(window);
             break;
           case KEY_ESCAPE:
@@ -1076,7 +1077,7 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
           case KEY_ENTER:
             return(selection);
             break;
-          case KEY_F11:
+          case KEY_FULLSCREEN:
             switchfullscreen(window);
             break;
           case KEY_ESCAPE:
@@ -1268,7 +1269,7 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
           case KEY_ESCAPE:
             selected = SELECTLEVEL_BACK;
             break;
-          case KEY_F11:
+          case KEY_FULLSCREEN:
             switchfullscreen(window);
             break;
           case KEY_HOME:
@@ -1718,7 +1719,7 @@ int main(int argc, char **argv) {
             }
             }
             break;
-          case KEY_F11:
+          case KEY_FULLSCREEN:
             switchfullscreen(window);
             break;
           case KEY_ESCAPE:

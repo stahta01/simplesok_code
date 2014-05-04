@@ -53,6 +53,25 @@ path to a XSB level file.
                     This value must be in the range 1..1000000.
 
 
+[ Keys bindings ]
+
+Simple Sokoban is though to react to keyboard keys that are well-known and
+seem intuitive. However, for the sake of documentation, I present here below
+the list of keys one can use when using Simple Sokoban:
+
+  F1                - display help
+  F2                - turn on/off graphical elements
+  F3                - dump the level to clipboard
+  F5/F7             - save/load game state
+  Backspace         - undo last move
+  R                 - restart the ongoing level
+  S                 - play the solution (if available)
+  CTRL+C            - copy current level state to clipboard
+  CTRL+V            - paste moves from clipboard
+  CTRL+UP/CTRL+DOWN - zoom in/out
+  F11 or ALT+ENTER  - fullscreen on/off
+
+
 [ Credits ]
 
 Simple Sokoban has been written by Mateusz Viste. However, the project

@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.4 r9939"
    sodipodi:docname="help.svg"
-   inkscape:export-filename="/home/mateusz/svn/sok/img/intro.png"
+   inkscape:export-filename="/home/mateusz/svn/simplesok/img/help.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -65,7 +65,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -135,7 +135,7 @@
          style="font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3012">F5/F7 - save/load game state</flowPara><flowPara
          style="font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
-         id="flowPara3006">F11 - fullscreen on/off</flowPara><flowPara
+         id="flowPara3006">F11 / ALT+ENTER - fullscreen on/off</flowPara><flowPara
          style="font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
          id="flowPara3010">CTRL+C - copy current level state to clipboard</flowPara><flowPara
          style="font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:justify;text-anchor:start;font-family:Sans;-inkscape-font-specification:Sans"
