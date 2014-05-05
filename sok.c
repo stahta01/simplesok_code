@@ -1209,11 +1209,13 @@ static void fetchtoken(char *res, char *buf, int pos) {
 
 static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struct spritesstruct *sprites, char *host, long port, char *path, char *levelslist, unsigned char **xsbptr, long *reslen) {
   unsigned char *res = NULL;
-  char url[2048], buff[2048], buff2[2048];
+  char url[1024], buff[1024], buff2[1024];
   char *inetlist[1024];
   int inetlistlen = 0, i, selected = 0, windowrows, fontheight = 24, winw, winh;
   static int selection = 0, seloffset = 0;
   SDL_Event event;
+  *xsbptr = NULL;
+  *reslen = 0;
   /* load levelslist into an array */
   for (;;) {
     inetlist[inetlistlen] = readmemline(&levelslist);
@@ -1221,6 +1223,7 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
     inetlistlen += 1;
     if (inetlistlen >= 1024) break;
   }
+  if (inetlistlen < 1) return(SELECTLEVEL_BACK); /* if failed to load any level, quit here */
   /* selection loop */
   for (;;) {
     SDL_Rect rect;
@@ -1552,7 +1555,14 @@ int main(int argc, char **argv) {
   LoadInternetLevels:
   if (levelsource == LEVEL_INTERNET) { /* internet levels */
       int selectres;
-      http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
+      long httpres;
+      httpres = http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
+      if ((httpres < 1) || (levelslist == NULL)) {
+        SDL_RenderClear(renderer);
+        draw_string("Failed to fetched internet levels!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+        wait_for_a_key(-1, renderer);
+        goto GametypeSelectMenu;
+      }
       selectres = selectinternetlevel(renderer, window, sprites, INET_HOST, INET_PORT, INET_PATH, levelslist, &xsblevelptr, &xsblevelptrlen);
       if (selectres == SELECTLEVEL_BACK) goto GametypeSelectMenu;
       if (selectres == SELECTLEVEL_QUIT) exitflag = 1;
