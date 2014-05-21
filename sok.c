@@ -285,7 +285,7 @@ static int isLegalSokoSolution(char *solstr) {
   }
 }
 
-/* a wrapper on the SDL_Delay() call. The difference is that it reminds the last call, so it knows if there is still time to wait or ont. This allows to smooth out delays, providing accurate delaying across platforms.
+/* a wrapper on the SDL_Delay() call. The difference is that it reminds the last call, so it knows if there is still time to wait or not. This allows to smooth out delays, providing accurate delaying across platforms.
  * Usage: first call it with a '0' parameter to initialize the timer, and then feed it with t microseconds as many times as needed. */
 static int sokDelay(long t) {
   static Uint32 timetowait = 0, starttime = 0, irq = 0, irqfreq = 0;
@@ -439,37 +439,87 @@ static void get_string_size(char *string, int fontsize, struct spritesstruct *sp
   }
 }
 
+/* explode a string into wordwrapped substrings */
+void wordwrap(char *string, char **multiline, int maxlines, int maxwidth, int fontsize, struct spritesstruct *sprites) {
+  int lastspace, multilineid;
+  int x, stringw, stringh;
+  char *tmpstring;
+  /* set all multiline entries to NULL */
+  for (x = 0; x < maxlines; x++) multiline[x] = NULL;
+
+  /* find the next word boundary */
+  lastspace = -1;
+  multilineid = 0;
+  for (;;) { /* loop on every word, and check if we reached the end */
+    for (x = lastspace + 1; ; x++) {
+      if ((string[x] == ' ') || (string[x] == '\t') || (string[x] == '\n') || (string[x] == 0)) {
+        lastspace = x;
+        break;
+      }
+    }
+    /* is this word boundary fitting on screen? */
+    tmpstring = strdup(string);
+    tmpstring[lastspace] = 0;
+    get_string_size(tmpstring, fontsize, sprites, &stringw, &stringh);
+    if (stringw <= maxwidth) {
+        if (multiline[multilineid] != NULL) free(multiline[multilineid]);
+        multiline[multilineid] = tmpstring;
+      } else {
+        free(tmpstring);
+        if (multiline[multilineid] == NULL) break;
+        lastspace = -1;
+        string += strlen(multiline[multilineid]) + 1;
+        multilineid += 1;
+        if (multilineid >= maxlines) break;
+    }
+    if (string[lastspace] == 0) break;
+  }
+
+}
+
 /* blits a string onscreen, scaling the font at fontsize percents. The string is placed at starting position x/y */
-static void draw_string(char *string, int fontsize, int alpha, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y, SDL_Window *window) {
-  int i;
+static void draw_string(char *orgstring, int fontsize, int alpha, struct spritesstruct *sprites, SDL_Renderer *renderer, int x, int y, SDL_Window *window, int maxlines, int pheight) {
+  int i, winw, winh;
+  char *string;
   SDL_Texture *glyph;
   SDL_Rect rectsrc, rectdst;
-  /* if centering is requested, get size of the string */
-  if ((x < 0) || (y < 0)) {
-    int winw, winh, stringw, stringh;
-    /* get size of the window */
-    SDL_GetWindowSize(window, &winw, &winh);
-    /* get pixel length of the string */
-    get_string_size(string, fontsize, sprites, &stringw, &stringh);
-    if (x == DRAWSTRING_CENTER) x = (winw - stringw) >> 1;
-    if (x == DRAWSTRING_RIGHT) x = winw - stringw - 10;
-    if (y == DRAWSTRING_BOTTOM) y = winh - stringh;
-    if (y == DRAWSTRING_CENTER) y = (winh - stringh) / 2;
-  }
-  rectdst.x = x;
-  rectdst.y = y;
-  for (i = 0; string[i] != 0; i++) {
-    if (string[i] == ' ') {
-      rectdst.x += FONT_SPACE_WIDTH * fontsize / 100;
-      continue;
+  char *multiline[16];
+  int multilineid = 0;
+  if (maxlines > 16) maxlines = 16;
+  /* get size of the window */
+  SDL_GetWindowSize(window, &winw, &winh);
+  wordwrap(orgstring, multiline, maxlines, winw - x, fontsize, sprites);
+  /* loop on every line */
+  for (multilineid = 0; (multiline[multilineid] != NULL) && (multilineid < maxlines); multilineid += 1) {
+    string = multiline[multilineid];
+    if (multilineid > 0) y += pheight;
+    /* if centering is requested, get size of the string */
+    if ((x < 0) || (y < 0)) {
+      int stringw, stringh;
+      /* get pixel length of the string */
+      get_string_size(string, fontsize, sprites, &stringw, &stringh);
+      if (x == DRAWSTRING_CENTER) x = (winw - stringw) >> 1;
+      if (x == DRAWSTRING_RIGHT) x = winw - stringw - 10;
+      if (y == DRAWSTRING_BOTTOM) y = winh - stringh;
+      if (y == DRAWSTRING_CENTER) y = (winh - stringh) / 2;
     }
-    glyph = sprites->font[char2fontid(string[i])];
-    SDL_QueryTexture(glyph, NULL, NULL, &rectsrc.w, &rectsrc.h);
-    rectdst.w = rectsrc.w * fontsize / 100;
-    rectdst.h = rectsrc.h * fontsize / 100;
-    SDL_SetTextureAlphaMod(glyph, alpha);
-    SDL_RenderCopy(renderer, glyph, NULL, &rectdst);
-    rectdst.x += (rectsrc.w * fontsize / 100) + (FONT_KERNING * fontsize / 100);
+    rectdst.x = x;
+    rectdst.y = y;
+    for (i = 0; string[i] != 0; i++) {
+      if (string[i] == ' ') {
+        rectdst.x += FONT_SPACE_WIDTH * fontsize / 100;
+        continue;
+      }
+      glyph = sprites->font[char2fontid(string[i])];
+      SDL_QueryTexture(glyph, NULL, NULL, &rectsrc.w, &rectsrc.h);
+      rectdst.w = rectsrc.w * fontsize / 100;
+      rectdst.h = rectsrc.h * fontsize / 100;
+      SDL_SetTextureAlphaMod(glyph, alpha);
+      SDL_RenderCopy(renderer, glyph, NULL, &rectdst);
+      rectdst.x += (rectsrc.w * fontsize / 100) + (FONT_KERNING * fontsize / 100);
+    }
+    /* free the multiline memory */
+    free(string);
   }
 }
 
@@ -682,17 +732,17 @@ static void draw_screen(struct sokgame *game, struct sokgamestates *states, stru
   /* draw text */
   if ((flags & DRAWSCREEN_NOTXT) == 0) {
     sprintf(stringbuff, "%s, level %d", levelname, game->level);
-    draw_string(stringbuff, 100, 255, sprites, renderer, 10, DRAWSTRING_BOTTOM, window);
+    draw_string(stringbuff, 100, 255, sprites, renderer, 10, DRAWSTRING_BOTTOM, window, 1, 0);
     if (game->solution != NULL) {
         sprintf(stringbuff, "best score: %ld/%ld", sok_history_getlen(game->solution), sok_history_getpushes(game->solution));
       } else {
         sprintf(stringbuff, "best score: -");
     }
-    draw_string(stringbuff, 100, 255, sprites, renderer, DRAWSTRING_RIGHT, 0, window);
+    draw_string(stringbuff, 100, 255, sprites, renderer, DRAWSTRING_RIGHT, 0, window, 1, 0);
     sprintf(stringbuff, "moves: %ld / pushes: %ld", sok_history_getlen(states->history), sok_history_getpushes(states->history));
-    draw_string(stringbuff, 100, 255, sprites, renderer, 10, 0, window);
+    draw_string(stringbuff, 100, 255, sprites, renderer, 10, 0, window, 1, 0);
   }
-  if ((flags & DRAWSCREEN_PLAYBACK) && (time(NULL) % 2 == 0)) draw_string("*** PLAYBACK ***", 100, 255, sprites, renderer, DRAWSTRING_CENTER, 32, window);
+  if ((flags & DRAWSCREEN_PLAYBACK) && (time(NULL) % 2 == 0)) draw_string("*** PLAYBACK ***", 100, 255, sprites, renderer, DRAWSTRING_CENTER, 32, window, 1, 0);
   /* Update the screen */
   if (flags & DRAWSCREEN_REFRESH) SDL_RenderPresent(renderer);
 }
@@ -832,7 +882,7 @@ static unsigned char *selectgametype(SDL_Renderer *renderer, struct spritesstruc
         displaytexture(renderer, sprites->intro, window, 0, NOREFRESH, 255);
         SDL_RenderCopyEx(renderer, sprites->player, NULL, &rect, 90, NULL, SDL_FLIP_NONE);
         for (x = 0; x < 5; x++) {
-          draw_string(levname[x], 100, 255, sprites, renderer, rect.x + 54, textvadj + selectionpos[x], window);
+          draw_string(levname[x], 100, 255, sprites, renderer, rect.x + 54, textvadj + selectionpos[x], window, 1, 0);
         }
         SDL_RenderPresent(renderer);
         if (rect.y == newpusherposy) break;
@@ -1025,10 +1075,10 @@ static int selectlevel(struct sokgame **gameslist, struct spritesstruct *sprites
     /* draw the selected level */
     blit_levelmap(gameslist[selection], sprites,  winw / 2,  winh / 2, renderer, settings->nativetilesize, settings->tilesize / 3, 210, BLIT_LEVELMAP_BACKGROUND);
     /* draw strings, etc */
-    draw_string(levcomment, 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh / 8, window);
-    draw_string("(choose a level)", 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh / 8 + 40, window);
+    draw_string(levcomment, 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh / 8, window, 1, 0);
+    draw_string("(choose a level)", 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh / 8 + 40, window, 1, 0);
     sprintf(levelnum, "Level %d of %d", selection + 1, levelscount);
-    draw_string(levelnum, 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh * 3 / 4, window);
+    draw_string(levelnum, 100, 255, sprites, renderer, DRAWSTRING_CENTER, winh * 3 / 4, window, 1, 0);
     SDL_RenderPresent(renderer);
 
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
@@ -1235,7 +1285,7 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
     for (i = 0; i < windowrows; i++) {
       if (i + seloffset >= inetlistlen) break;
       fetchtoken(buff, inetlist[i + seloffset], 1);
-      draw_string(buff, 100, 255, sprites, renderer, 30, i * fontheight, window);
+      draw_string(buff, 100, 255, sprites, renderer, 30, i * fontheight, window, 1, 0);
       if (i + seloffset == selection) {
         rect.x = 0;
         rect.y = i * fontheight;
@@ -1257,12 +1307,12 @@ static int selectinternetlevel(SDL_Renderer *renderer, SDL_Window *window, struc
     /* draw level description */
     rect.y += fontheight * 0.5;
     fetchtoken(buff2, inetlist[selection], 1);
-    draw_string(buff2, 100, 250, sprites, renderer, DRAWSTRING_CENTER, rect.y, window);
+    draw_string(buff2, 100, 250, sprites, renderer, DRAWSTRING_CENTER, rect.y, window, 1, 0);
     fetchtoken(buff2, inetlist[selection], 2);
     sprintf(buff, "Copyright (C) %s", buff2);
-    draw_string(buff, 65, 200, sprites, renderer, DRAWSTRING_CENTER, rect.y + fontheight * 1.2, window);
+    draw_string(buff, 65, 200, sprites, renderer, DRAWSTRING_CENTER, rect.y + fontheight * 1.2, window, 1, 0);
     fetchtoken(buff, inetlist[selection], 3);
-    draw_string(buff, 100, 210, sprites, renderer, 0, rect.y + fontheight * 2.6, window);
+    draw_string(buff, 100, 210, sprites, renderer, 0, rect.y + fontheight * 2.6, window, 3, fontheight);
     /* refresh screen */
     SDL_RenderPresent(renderer);
     /* Wait for an event - but ignore 'KEYUP' and 'MOUSEMOTION' events, since they are worthless in this game */
@@ -1559,7 +1609,7 @@ int main(int argc, char **argv) {
       httpres = http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
       if ((httpres < 1) || (levelslist == NULL)) {
         SDL_RenderClear(renderer);
-        draw_string("Failed to fetched internet levels!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+        draw_string("Failed to fetched internet levels!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window, 1, 0);
         wait_for_a_key(-1, renderer);
         goto GametypeSelectMenu;
       }
@@ -1581,7 +1631,7 @@ int main(int argc, char **argv) {
   if ((levelscount < 1) && (exitflag == 0)) {
     SDL_RenderClear(renderer);
     printf("Failed to load the level file [%d]: %s\n", levelscount, sok_strerr(levelscount));
-    draw_string("Failed to load the level file!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window);
+    draw_string("Failed to load the level file!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window, 1, 0);
     wait_for_a_key(-1, renderer);
     exitflag = 1;
   }
