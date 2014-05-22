@@ -340,19 +340,24 @@ static int char2fontid(char c) {
   /* handle symbols */
   switch (c) {
     case ':': return(63);
-    case '!': return(64);
-    case '$': return(65);
-    case '.': return(66);
-    case '&': return(67);
-    case '*': return(68);
-    case ',': return(69);
-    case '(': return(70);
-    case ')': return(71);
-    case '[': return(72);
-    case ']': return(73);
-    case '-': return(74);
-    case '_': return(75);
-    case '/': return(76);
+    case ';': return(64);
+    case '!': return(65);
+    case '$': return(66);
+    case '.': return(67);
+    case '&': return(68);
+    case '*': return(69);
+    case ',': return(70);
+    case '(': return(71);
+    case ')': return(72);
+    case '[': return(73);
+    case ']': return(74);
+    case '-': return(75);
+    case '_': return(76);
+    case '/': return(77);
+    case '"': return(78);
+    case '#': return(79);
+    case '@': return(80);
+    case '\'': return(81);
   }
   /* if anything else, return 'underscore'... */
   return(75);
@@ -1550,6 +1555,7 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid('Y')], renderer, font_yy_bmp_gz, font_yy_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('Z')], renderer, font_zz_bmp_gz, font_zz_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid(':')], renderer, font_sym_col_bmp_gz, font_sym_col_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid(';')], renderer, font_sym_scol_bmp_gz, font_sym_scol_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('!')], renderer, font_sym_excl_bmp_gz, font_sym_excl_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('$')], renderer, font_sym_doll_bmp_gz, font_sym_doll_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('.')], renderer, font_sym_dot_bmp_gz, font_sym_dot_bmp_gz_len);
@@ -1563,6 +1569,10 @@ int main(int argc, char **argv) {
   loadGraphic(&sprites->font[char2fontid('-')], renderer, font_sym_minu_bmp_gz, font_sym_minu_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('_')], renderer, font_sym_unde_bmp_gz, font_sym_unde_bmp_gz_len);
   loadGraphic(&sprites->font[char2fontid('/')], renderer, font_sym_slas_bmp_gz, font_sym_slas_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('"')], renderer, font_sym_quot_bmp_gz, font_sym_quot_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('#')], renderer, font_sym_hash_bmp_gz, font_sym_hash_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('@')], renderer, font_sym_at_bmp_gz, font_sym_at_bmp_gz_len);
+  loadGraphic(&sprites->font[char2fontid('\'')], renderer, font_sym_apos_bmp_gz, font_sym_apos_bmp_gz_len);
 
   /* Hide the mouse cursor, disable mouse events and make sure DropEvents are enabled (sometimes they are not) */
   SDL_ShowCursor(SDL_DISABLE);
