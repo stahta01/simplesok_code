@@ -470,11 +470,19 @@ void wordwrap(char *string, char **multiline, int maxlines, int maxwidth, int fo
         lastspace = -1;
         string += strlen(multiline[multilineid]) + 1;
         multilineid += 1;
-        if (multilineid >= maxlines) break;
+        if (multilineid >= maxlines) {
+          int lastlinelen = strlen(multiline[multilineid - 1]);
+          /* if text have been truncated, print '...' at the end of the last line */
+          if (lastlinelen >= 3) {
+            multiline[multilineid - 1][lastlinelen - 3] = '.';
+            multiline[multilineid - 1][lastlinelen - 2] = '.';
+            multiline[multilineid - 1][lastlinelen - 1] = '.';
+          }
+          break;
+        }
     }
-    if (string[lastspace] == 0) break;
+    if ((lastspace >= 0) && (string[lastspace] == 0)) break;
   }
-
 }
 
 /* blits a string onscreen, scaling the font at fontsize percents. The string is placed at starting position x/y */
