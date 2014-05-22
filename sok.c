@@ -146,6 +146,31 @@ static int absval(int i) {
   return(i);
 }
 
+/* uncompress a sokoban XSB string and returns a new malloced string with the decompressed version */
+char *unRLE(char *xsb) {
+  char *res = NULL;
+  long resalloc = 16, reslen = 0;
+  long x;
+  int rlecnt = 1;
+  res = malloc(resalloc);
+  for (x = 0; xsb[x] != 0; x++) {
+    if ((xsb[x] >= '0') && (xsb[x] <= '9')) {
+        rlecnt = xsb[x] - '0';
+      } else {
+        for (; rlecnt > 0; rlecnt--) {
+          if (reslen + 4 > resalloc) {
+            resalloc *= 2;
+            res = realloc(res, resalloc);
+          }
+          res[reslen++] = xsb[x];
+        }
+        rlecnt = 1;
+    }
+  }
+  res[reslen] = 0;
+  return(res);
+}
+
 /* normalize SDL keys to values easier to handle */
 static int normalizekeys(SDL_Keycode key) {
   switch (key) {
@@ -286,6 +311,18 @@ static int isLegalSokoSolution(char *solstr) {
   if (strlen(solstr) < 1) return(0);
   for (;;) {
     switch (*solstr) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        if (solstr[1] == 0) return(0); /* numbers are tolerated, but only if followed by something */
+        break;
       case 'u':
       case 'U':
       case 'r':
@@ -1783,7 +1820,8 @@ int main(int argc, char **argv) {
                 exitflag = displaytexture(renderer, sprites->playfromclipboard, window, 2, DISPLAYCENTERED, 255);
                 playsolution = 1;
                 if (playsource != NULL) free(playsource);
-                playsource = solFromClipboard;
+                playsource = unRLE(solFromClipboard);
+                free(solFromClipboard);
               } else {
                 if (solFromClipboard != NULL) free(solFromClipboard);
             }
@@ -1793,7 +1831,7 @@ int main(int argc, char **argv) {
             if (playsolution == 0) {
               if (game.solution != NULL) { /* only allow if there actually is a solution */
                   if (playsource != NULL) free(playsource);
-                  playsource = strdup(game.solution); /* I duplicate the solution string, because I want to free it later, since it can originate both from the game's solution as well as from a clipboard string */
+                  playsource = unRLE(game.solution); /* I duplicate the solution string, because I want to free it later, since it can originate both from the game's solution as well as from a clipboard string */
                   if (playsource != NULL) {
                     loadlevel(&game, gameslist[curlevel], states);
                     playsolution = 1;
