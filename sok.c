@@ -261,6 +261,25 @@ static SDL_Surface *loadgzbmp(unsigned char *memgz, long memgzlen) {
   return(surface);
 }
 
+/* trims a trailing newline, if any, from a string */
+static void trimstr(char *str) {
+  int x, lastrealchar = -1;
+  if (str == NULL) return;
+  for (x = 0; str[x] != 0; x++) {
+    switch (str[x]) {
+      case ' ':
+      case '\t':
+      case '\r':
+      case '\n':
+        break;
+      default:
+        lastrealchar = x;
+        break;
+    }
+  }
+  str[lastrealchar + 1] = 0;
+}
+
 /* returns 0 if string is not a legal solution. non-zero otherwise. */
 static int isLegalSokoSolution(char *solstr) {
   if (solstr == NULL) return(0);
@@ -466,7 +485,7 @@ void wordwrap(char *string, char **multiline, int maxlines, int maxwidth, int fo
     tmpstring = strdup(string);
     tmpstring[lastspace] = 0;
     get_string_size(tmpstring, fontsize, sprites, &stringw, &stringh);
-    if (stringw <= maxwidth) {
+    if (stringw < maxwidth) {
         if (multiline[multilineid] != NULL) free(multiline[multilineid]);
         multiline[multilineid] = tmpstring;
       } else {
@@ -1758,6 +1777,7 @@ int main(int argc, char **argv) {
             {
             char *solFromClipboard;
             solFromClipboard = SDL_GetClipboardText();
+            trimstr(solFromClipboard);
             if (isLegalSokoSolution(solFromClipboard) != 0) {
                 loadlevel(&game, gameslist[curlevel], states);
                 exitflag = displaytexture(renderer, sprites->playfromclipboard, window, 2, DISPLAYCENTERED, 255);
