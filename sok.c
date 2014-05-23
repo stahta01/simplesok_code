@@ -1683,7 +1683,7 @@ int main(int argc, char **argv) {
       httpres = http_get(INET_HOST, INET_PORT, INET_PATH, (unsigned char **) &levelslist);
       if ((httpres < 1) || (levelslist == NULL)) {
         SDL_RenderClear(renderer);
-        draw_string("Failed to fetched internet levels!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window, 1, 0);
+        draw_string("Failed to fetch internet levels!", 100, 255, sprites, renderer, DRAWSTRING_CENTER, DRAWSTRING_CENTER, window, 1, 0);
         wait_for_a_key(-1, renderer);
         goto GametypeSelectMenu;
       }
