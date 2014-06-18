@@ -31,7 +31,7 @@
 #include "gz.h"
 #include "net.h"
 
-#define PVER "v1.0.1 beta"
+#define PVER "v1.0.1"
 
 #define INET_HOST "simplesok.sourceforge.net"
 #define INET_PORT 80
