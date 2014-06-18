@@ -30,4 +30,4 @@ net.o: net.c
 
 clean:
 	del *.o
-	del sok.exe
+	del simplesok.exe
